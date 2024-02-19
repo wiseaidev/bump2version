@@ -1,0 +1,25 @@
+[package]
+name = "bump2version"
+version = "0.1.0"
+edition = "2021"
+description = "⬆️ Easily manage version numbers in your projects."
+license = "MIT"
+keywords = ["cli", "parser"]
+categories = ["command-line-utilities"]
+repository = "https://github.com/wiseaidev/bump2version"
+documentation = "https://docs.rs/bump2version"
+authors = ["Mahmoud Harmouch <oss@wiseai.dev>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+clap = { version = "4.5.1", features = ["derive"] }
+regex = "1.10.3"
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = "thin"
+strip = "symbols"
