@@ -9,6 +9,7 @@
 ## 📖 Table of Contents
 
 - [Quick Start](#-quick-start)
+- [Configuration File](#-configuration-file)
 - [Features](#-features)
 - [Options](#-options)
 - [GitHub Repository](#-github-repository)
@@ -27,8 +28,24 @@ Get started with the `bump2version` CLI by following these simple steps:
 1. Use the following options to manage version numbers and customize the behavior:
 
    ```bash
-   bump2version --current-version 1.2.3 --bump patch
+   bump2version --bump patch # or minor or major
    ```
+
+## 🛠️ Configuration File
+
+To customize the behavior of `bump2version`, you can use a configuration file named `.bumpversion.toml`. This file should be present in the root of your project. If it's not found, the cli will use default values.
+
+Here's an example `.bumpversion.toml` configuration file you can use in your project:
+
+```toml
+[bumpversion]
+current_version = "0.1.0" # Specify the current version of your project.
+
+# Specify how to search for and replace the version in the 'Cargo.toml' file.
+[bumpversion:file:Cargo.toml]
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
+```
 
 ## ✨ Features
 
@@ -40,7 +57,7 @@ Get started with the `bump2version` CLI by following these simple steps:
 
 | Option                 | Description                                                       |
 |------------------------|-------------------------------------------------------------------|
-| `--config-file`        | Config file to read most of the variables from.                   |
+| `--config-file`        | Config file to read most of the variables from (default: `.bumpversion.toml`). |
 | `--current-version`    | Version that needs to be updated.                                 |
 | `--bump`               | Part of the version to be bumped (default: patch).                |
 | `--parse`              | Regex parsing the version string (default: \d+\.\d+\.\d+).        |
