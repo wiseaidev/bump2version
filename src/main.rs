@@ -1,6 +1,9 @@
 use self::cli::Cli;
 use crate::utils::attempt_version_bump;
+use crate::utils::get_current_version_from_config;
+use crate::utils::read_files_from_config;
 use clap::Parser;
+use std::collections::HashSet;
 use std::fs;
 use std::process::Command;
 
@@ -8,23 +11,32 @@ mod cli;
 mod utils;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Parse command-line arguments
     let args = Cli::parse();
     let config_file = args.config_file.clone();
-    let current_version = args.current_version.clone();
+    let config_content = fs::read_to_string(args.config_file.clone()).unwrap();
+    let config_version = get_current_version_from_config(&config_content).ok_or("")?;
+    let current_version = args
+        .current_version
+        .clone()
+        .unwrap_or(config_version)
+        .clone();
 
     let attempted_new_version = attempt_version_bump(args.clone());
 
-    if !args.new_version.is_empty() && attempted_new_version.is_some() {
-        // TODO: fix let new_version = attempted_new_version.clone().unwrap();
-        let new_version = args.new_version.clone();
+    if attempted_new_version.is_some() {
+        let new_version = attempted_new_version.clone().unwrap();
 
         let dry_run = args.dry_run;
         let commit = args.commit;
         let tag = args.tag;
         let message = args.message;
 
-        let files: Vec<String> = args.files;
+        let files: Vec<String> = if args.files.is_empty() {
+            let config_files: HashSet<String> = read_files_from_config(&args.config_file)?;
+            config_files.into_iter().collect()
+        } else {
+            args.files
+        };
 
         // Check if Git working directory is clean
         if fs::metadata(".git").is_ok() {
@@ -66,12 +78,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut config_content = fs::read_to_string(config_file.clone())?;
 
             config_content = config_content.replace(
-                &format!("new_version={}", attempted_new_version.unwrap()),
-                "",
-            );
-            config_content = config_content.replace(
-                &format!("current_version={}", current_version),
-                &format!("current_version={}", new_version),
+                &format!("current_version = {}", current_version),
+                &format!("current_version = {}", new_version),
             );
 
             if !dry_run {
@@ -79,22 +87,62 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 commit_files.push(config_file);
             }
         }
-
-        // Git commit and tag
         if commit {
             for path in &commit_files {
-                Command::new("git").arg("add").arg(path).output()?;
-            }
+                let git_add_output = Command::new("git").arg("add").arg(path).output();
 
-            Command::new("git")
-                .arg("commit")
-                .arg("-m")
-                .arg(
-                    message
-                        .replace("{current_version}", &current_version)
-                        .replace("{new_version}", &new_version),
-                )
-                .output()?;
+                match git_add_output {
+                    Ok(output) => {
+                        if !output.status.success() {
+                            let stderr = String::from_utf8_lossy(&output.stderr);
+                            eprintln!("Error during git add:\n{}", stderr);
+                        }
+                    }
+                    Err(err) => {
+                        eprintln!("Failed to execute git add: {}", err);
+                    }
+                }
+            }
+            let git_diff_output = Command::new("git").arg("diff").output();
+
+            match git_diff_output {
+                Ok(output) => {
+                    if !output.stdout.is_empty() {
+                        // There are changes, proceed with git commit
+                        let commit_output = Command::new("git")
+                            .arg("commit")
+                            .arg("-m")
+                            .arg(
+                                message
+                                    .replace("{current_version}", &current_version)
+                                    .replace("{new_version}", &new_version),
+                            )
+                            .output();
+
+                        match commit_output {
+                            Ok(commit_output) => {
+                                if commit_output.status.success() {
+                                    println!("Git commit successful");
+                                } else {
+                                    eprintln!(
+                                        "Error during git commit:\n{}",
+                                        String::from_utf8_lossy(&commit_output.stderr)
+                                    );
+                                }
+                            }
+                            Err(err) => {
+                                eprintln!("Failed to execute git commit: {}", err);
+                            }
+                        }
+                    } else {
+                        // No changes to commit
+                        println!("No changes to commit. Working tree clean.");
+                    }
+                }
+                Err(err) => {
+                    eprintln!("Failed to execute git diff: {}", err);
+                }
+            }
 
             if tag {
                 Command::new("git")
@@ -104,7 +152,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     } else {
-        println!("No files specified");
+        eprintln!("No files specified");
     }
 
     Ok(())
