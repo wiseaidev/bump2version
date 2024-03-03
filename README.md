@@ -39,7 +39,7 @@ Here's an example `.bumpversion.toml` configuration file you can use in your pro
 
 ```toml
 [bumpversion]
-current_version = "0.1.0" # Specify the current version of your project.
+current_version = 0.1.0 # Specify the current version of your project, samne value as Cargo.toml version
 
 # Specify how to search for and replace the version in the 'Cargo.toml' file.
 [bumpversion:file:Cargo.toml]
