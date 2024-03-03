@@ -64,7 +64,7 @@ pub struct Cli {
 
     /// Version that needs to be updated.
     #[arg(long = "current-version", value_name = "VERSION")]
-    pub current_version: String,
+    pub current_version: Option<String>,
 
     /// Part of the version to be bumped.
     #[arg(
@@ -91,12 +91,12 @@ pub struct Cli {
     pub serialize: String,
 
     /// Don't write any files, just pretend.
-    #[arg(short = 'n', long = "dry-run")]
+    #[arg(short = 'n', long = "dry-run", default_value_t = false)]
     pub dry_run: bool,
 
     /// New version that should be in the files.
     #[arg(long = "new-version", value_name = "VERSION")]
-    pub new_version: String,
+    pub new_version: Option<String>,
 
     /// Create a commit in version control.
     #[arg(long = "commit", default_value_t = true)]
