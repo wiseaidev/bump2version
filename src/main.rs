@@ -107,8 +107,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             match git_diff_output {
                 Ok(output) => {
-                    if !output.stdout.is_empty() {
-                        // There are changes, proceed with git commit
+                    if output.stdout.is_empty() {
                         let commit_output = Command::new("git")
                             .arg("commit")
                             .arg("-m")
@@ -135,7 +134,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         }
                     } else {
-                        // No changes to commit
                         println!("No changes to commit. Working tree clean.");
                     }
                 }
