@@ -14,7 +14,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
     let config_file = args.config_file.clone();
     let config_content = fs::read_to_string(args.config_file.clone()).unwrap();
-    let config_version = get_current_version_from_config(&config_content).ok_or("")?;
+    let config_version = get_current_version_from_config(&config_content)
+        .ok_or("failed to get current version from config")?;
     let current_version = args
         .current_version
         .clone()
