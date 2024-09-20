@@ -22,7 +22,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or(config_version)
         .clone();
 
-    let attempted_new_version = attempt_version_bump(args.clone());
+    let attempted_new_version = if let Some(version) = args.new_version {
+        Some(version)
+    } else {
+        attempt_version_bump(args.clone())
+    };
 
     if attempted_new_version.is_some() {
         let new_version = attempted_new_version.clone().unwrap();
