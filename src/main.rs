@@ -14,14 +14,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
     let config_file = args.config_file.clone();
     let config_content = fs::read_to_string(args.config_file.clone()).unwrap();
-    let config_version = get_current_version_from_config(&config_content).ok_or("")?;
+    let config_version = get_current_version_from_config(&config_content)
+        .ok_or("failed to get current version from config")?;
     let current_version = args
         .current_version
         .clone()
         .unwrap_or(config_version)
         .clone();
 
-    let attempted_new_version = attempt_version_bump(args.clone());
+    let attempted_new_version = if let Some(version) = args.new_version {
+        Some(version)
+    } else {
+        attempt_version_bump(args.clone())
+    };
 
     if attempted_new_version.is_some() {
         let new_version = attempted_new_version.clone().unwrap();
