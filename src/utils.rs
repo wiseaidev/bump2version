@@ -52,11 +52,9 @@ pub fn attempt_version_bump(args: Cli) -> Option<String> {
     let mut parsed: HashMap<String, String> = HashMap::new();
 
     if let Some(captures) = regex.captures(&current_version) {
-        for name in regex.capture_names() {
-            if let Some(name) = name {
-                if let Some(capture) = captures.name(name) {
-                    parsed.insert(name.to_string(), capture.as_str().to_string());
-                }
+        for name in regex.capture_names().flatten() {
+            if let Some(capture) = captures.name(name) {
+                parsed.insert(name.to_string(), capture.as_str().to_string());
             }
         }
     }
