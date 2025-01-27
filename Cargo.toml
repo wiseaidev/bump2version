@@ -15,7 +15,7 @@ authors = ["Mahmoud Harmouch <oss@wiseai.dev>"]
 crate-type = ["cdylib"]
 
 [dependencies]
-clap = { version = "4.5.1", features = ["derive"] }
+clap = { version = "4.5.27", features = ["derive"] }
 regex = "1.10.3"
 
 [profile.release]
