@@ -1,10 +1,12 @@
 use std::{fs, os::unix::fs::PermissionsExt, path::Path};
 
+use crate::utils::sign_with_git_gpg;
 use anyhow::anyhow;
 use clap::Parser;
 use gix::bstr::BString;
 use gix::object::tree::EntryKind;
 use gix::objs;
+use gix::objs::WriteTo;
 use gix::{open as open_repo, progress::Discard};
 use smallvec::SmallVec;
 use std::os::unix::ffi::OsStrExt;
@@ -189,7 +191,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 extra_headers: Vec::new(),
             };
 
-            let commit_id = repo.write_object(&commit)?;
+            let mut commit_data = Vec::new();
+            commit.write_to(&mut commit_data)?;
+
+            let signature = sign_with_git_gpg(&commit_data)?;
+
+            let signed_commit = objs::Commit {
+                extra_headers: vec![("gpgsig".into(), signature.into())],
+                ..commit
+            };
+
+            let commit_id = repo.write_object(&signed_commit)?;
 
             repo.reference(
                 head_ref.name().to_owned(),
