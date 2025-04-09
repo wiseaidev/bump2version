@@ -166,6 +166,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let tree = objs::Tree { entries };
             let tree_id = repo.write_object(&tree)?;
 
+            let mut index = repo.index_from_tree(&tree_id)?;
+            index.write(gix::index::write::Options::default())?;
+
             let msg = message
                 .replace("{current_version}", &current_version)
                 .replace("{new_version}", &new_version);
