@@ -17,6 +17,9 @@ crate-type = ["cdylib"]
 [dependencies]
 clap = { version = "4.5.1", features = ["derive"] }
 regex = "1.10.3"
+gix = { version = "0.71.0", default-features = false, features = ["status", "worktree-mutation", "revision", "attributes", "index"] }
+anyhow = "1.0.97"
+smallvec = "1.15.0"
 
 [profile.release]
 codegen-units = 1
