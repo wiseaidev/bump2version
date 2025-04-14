@@ -18,7 +18,7 @@ crate-type = ["cdylib"]
 clap = { version = "4.5.35", features = ["derive"] }
 regex = "1.11.1"
 gix = { version = "0.71.0", default-features = false, features = ["status", "worktree-mutation", "revision", "attributes", "index"] }
-anyhow = "1.0.97"
+anyhow = "1.0.98"
 smallvec = "1.15.0"
 
 [profile.release]
