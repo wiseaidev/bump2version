@@ -14,7 +14,7 @@ cargo install bump2version --features rust-binary
 
 ```toml
 [dependencies]
-bump2version = { version = "0.1.6", default-features = false }
+bump2version = { version = "0.2.0", default-features = false }
 ```
 
 ## 🛠 Usage Overview

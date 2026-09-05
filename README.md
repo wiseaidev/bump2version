@@ -50,7 +50,7 @@ The crate ships the following Cargo features:
 
 ```toml
 [dependencies]
-bump2version = "0.1.6"
+bump2version = "0.2.0"
 ```
 
 ```rust
@@ -70,7 +70,7 @@ Core modules (`config`, `version`, `files`, `error`) compile in `no_std + alloc`
 
 ```toml
 # no_std (alloc required by the target):
-bump2version = { version = "0.1.6", default-features = false }
+bump2version = { version = "0.2.0", default-features = false }
 ```
 
 | Module           | `no_std+alloc` | `std` |
