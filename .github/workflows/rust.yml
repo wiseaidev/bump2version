@@ -1,4 +1,4 @@
-name: CI
+name: Rust
 
 on:
   push:
@@ -14,11 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Configure git identity
-        run: |
-          git config --global user.name "gh"
-          git config --global user.email "gh@github.com"
+      - uses: actions/checkout@v4
       - name: Build
         run: cargo build --verbose
       - name: Run default tests
