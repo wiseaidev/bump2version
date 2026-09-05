@@ -1,0 +1,54 @@
+{
+  "name": "bump2version",
+  "version": "0.1.6",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wiseaidev/bump2version.git"
+  },
+  "homepage": "https://github.com/wiseaidev/bump2version",
+  "bugs": {
+    "url": "https://github.com/wiseaidev/bump2version/issues"
+  },
+  "author": "Mahmoud Harmouch <oss@wiseai.dev>",
+  "license": "MIT",
+  "description": "⬆️ Fast, native version bumper for Node.js, powered by Rust.",
+  "keywords": [
+    "bump2version",
+    "semver",
+    "versioning",
+    "release",
+    "rust",
+    "napi"
+  ],
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "*.node",
+    "README.md",
+    "LICENSE"
+  ],
+  "napi": {
+    "binaryName": "bump2version",
+    "targets": [
+      "x86_64-unknown-linux-gnu",
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "x86_64-pc-windows-msvc"
+    ]
+  },
+  "scripts": {
+    "artifacts": "napi artifacts",
+    "build": "napi build --platform --release --features node",
+    "build:debug": "napi build --platform --features node",
+    "version": "napi version"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.0.0"
+  },
+  "engines": {
+    "node": ">= 22"
+  },
+  "optionalDependencies": {}
+}

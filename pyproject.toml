@@ -1,0 +1,33 @@
+[build-system]
+requires = ["maturin>=1.13"]
+build-backend = "maturin"
+
+[project]
+name = "bump-rs"
+requires-python = ">=3.12"
+description = "⬆️ A fast, Rust-powered version bumper for Python projects."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Mahmoud Harmouch", email = "oss@wiseai.dev" }]
+keywords = ["bump2version", "semver", "versioning", "release", "rust"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Intended Audience :: Developers",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/wiseaidev/bump2version"
+Repository = "https://github.com/wiseaidev/bump2version"
+Documentation = "https://docs.rs/bump2version"
+Issues = "https://github.com/wiseaidev/bump2version/issues"
+
+[tool.maturin]
+features = ["python"]
+module-name = "bump_rs._bump_rs"
+python-source = "python"

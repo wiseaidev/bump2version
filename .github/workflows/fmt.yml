@@ -1,4 +1,4 @@
-name: 🧹 Cargo Clippy Linter
+name: 🦀 Cargo Format Check
 
 on:
   push:
@@ -10,13 +10,13 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  cargo-clippy:
-    name: 🔍 Run Clippy Linter
+  cargo-fmt:
+    name: 🔍 Check Rust Formatting
     runs-on: ubuntu-latest
 
     steps:
       - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 🧪 Run Clippy
-        run: cargo clippy --tests --all-features -- -D warnings
+      - name: 🧪 Run Fmt
+        run: cargo fmt --all -- --check
