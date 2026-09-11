@@ -1,22 +1,36 @@
 [bumpversion]
-current_version = 0.2.0
-commit = True
-tag = True
-parse = (?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)(-(?P<stage>[^.]*)\.(?P<devnum>\d+))?
-serialize = 
-	{major}.{minor}.{patch}-{stage}.{devnum}
-	{major}.{minor}.{patch}
-
-[bumpversion:part:stage]
-optional_value = stable
-first_value = stable
-values = 
-	alpha
-	beta
-	stable
-
-[bumpversion:part:devnum]
+current_version = 0.2.1
+commit = false
+tag = false
 
 [bumpversion:file:Cargo.toml]
 search = version = "{current_version}"
 replace = version = "{new_version}"
+
+[bumpversion:file:package.json]
+search = "version": "{current_version}"
+replace = "version": "{new_version}"
+
+[bumpversion:file:README.md]
+search = "{current_version}"
+replace = "{new_version}"
+
+[bumpversion:file:RUST.md]
+search = "{current_version}"
+replace = "{new_version}"
+
+[bumpversion:file:WASM.md]
+search = "{current_version}"
+replace = "{new_version}"
+
+[bumpversion:file:DOCKER.md]
+search = `{current_version}`
+replace = `{new_version}`
+
+[bumpversion:file:PACKAGING.md]
+search = {current_version}
+replace = {new_version}
+
+[bumpversion:file:rpm/bump2version.spec]
+search = Version: {current_version}
+replace = Version: {new_version}

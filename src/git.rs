@@ -40,14 +40,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// 2. `GIT_AUTHOR_NAME` / `GIT_AUTHOR_EMAIL` environment variables.
 /// 3. `GIT_COMMITTER_NAME` / `GIT_COMMITTER_EMAIL` environment variables.
 ///
-/// # Arguments
-///
-/// * `repo` - An open [`gix::Repository`].
-///
-/// # Returns
-///
-/// A `(name, email)` tuple.
-///
 /// # Errors
 ///
 /// Returns [`BumpError::GitError`] when neither git config nor environment
@@ -98,14 +90,6 @@ pub fn get_git_author(repo: &Repository) -> Result<(String, String), BumpError> 
 /// Uses the `gix` index to compare the on-disk work-tree against the staged
 /// state.  If any tracked files differ, this function returns an error.
 ///
-/// # Arguments
-///
-/// * `repo` - An open [`gix::Repository`].
-///
-/// # Returns
-///
-/// `Ok(())` when the working tree is clean.
-///
 /// # Errors
 ///
 /// Returns [`BumpError::GitError`] when uncommitted changes are detected or
@@ -154,10 +138,6 @@ pub fn assert_clean_working_tree(repo: &Repository) -> Result<(), BumpError> {
 /// The format is `"<unix_secs> +0000"`, which is what
 /// [`gix::actor::SignatureRef`]'s `time` field expects.
 ///
-/// # Returns
-///
-/// A `String` like `"1234567890 +0000"`.
-///
 /// # Complexity
 ///
 /// - **Time**: O(1).
@@ -177,18 +157,6 @@ fn now_utc_time_str() -> String {
 /// Only root-level tree entries are updated; files must be relative to the
 /// repository root. The author and committer are set to `author_name /
 /// author_email` rather than copying from the HEAD commit.
-///
-/// # Arguments
-///
-/// * `repo`         - An open [`gix::Repository`].
-/// * `files`        - Paths of files to stage (relative to repository root).
-/// * `message`      - The commit message.
-/// * `author_name`  - Author display name.
-/// * `author_email` - Author email address.
-///
-/// # Returns
-///
-/// The [`gix::ObjectId`] of the newly created commit.
 ///
 /// # Errors
 ///
@@ -227,7 +195,7 @@ pub fn commit_files(
         })
         .collect();
 
-    let mut file_blobs: Vec<(gix::bstr::BString, gix::ObjectId)> = Vec::new();
+    let mut file_blobs: Vec<(gix::bstr::BString, gix::ObjectId)> = Vec::with_capacity(files.len());
 
     for path_str in files {
         let content = std::fs::read(path_str)?;
@@ -298,17 +266,7 @@ pub fn commit_files(
 /// Creates a lightweight git tag pointing to `commit_id`.
 ///
 /// A lightweight tag is simply a named reference pointing directly at the
-/// commit object.  Use `git tag` for annotated tags if needed.
-///
-/// # Arguments
-///
-/// * `repo`      - An open [`gix::Repository`].
-/// * `tag_name`  - The tag name (e.g. `"v1.2.3"`).
-/// * `commit_id` - The [`gix::ObjectId`] of the commit to tag.
-///
-/// # Returns
-///
-/// `Ok(())` on success.
+/// commit object.
 ///
 /// # Errors
 ///

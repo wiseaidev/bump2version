@@ -60,9 +60,7 @@ pub fn read_files_from_config(config_path: &str) -> Result<HashSet<String>, Bump
 ///
 /// # Returns
 ///
-/// The new version string, or `None` when the bump cannot be performed (e.g.
-/// the config cannot be read or the current version does not match the
-/// `parse` regex).
+/// The new version string, or `None` when the bump cannot be performed.
 ///
 /// # Complexity
 ///
