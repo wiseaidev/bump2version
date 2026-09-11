@@ -8,49 +8,99 @@
 [![Docs.rs](https://docs.rs/bump2version/badge.svg)](https://docs.rs/bump2version)
 [![PyPI](https://img.shields.io/pypi/v/bump-rs.svg)](https://pypi.org/project/bump-rs)
 [![npm](https://img.shields.io/npm/v/bump2version.svg)](https://www.npmjs.com/package/bump2version)
+[![Docker](https://img.shields.io/docker/v/wiseaidev/bump2version?label=docker)](https://hub.docker.com/r/wiseaidev/bump2version)
+[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-bump2version-blue?logo=github)](https://github.com/marketplace/actions/bump-rs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/wiseaidev/bump2version/blob/main/LICENSE)
 
-> `bump2version` is a multi-language version bumper written entirely in **100% safe Rust**, with `no_std` support and native Python and Node.js bindings 🗿.
+> `bump2version` is the world's fastest version bumper written entirely in **100% safe Rust**, with `no_std` support, native Python and Node.js bindings, and a `cargo bump` subcommand 🗿.
 
-|                    🦀 Rust                    |                                    🐍 Python                                    |                                 🟩 Node.js                                  |
-| :-------------------------------------------: | :-----------------------------------------------------------------------------: | :-------------------------------------------------------------------------: |
-|           `cargo add bump2version`            |                              `pip install bump-rs`                              |                         `npm install bump2version`                          |
-| [Documentation](https://docs.rs/bump2version) | [Read PYTHON.md](https://github.com/wiseaidev/bump2version/blob/main/PYTHON.md) | [Read NODE.md](https://github.com/wiseaidev/bump2version/blob/main/NODE.md) |
-
-[![bump2version banner](https://raw.githubusercontent.com/wiseaidev/bump2version/refs/heads/main/assets/banner.png)](https://github.com/wiseaidev/bump2version)
+[![bump2version banner](https://raw.githubusercontent.com/wiseaidev/bump2version/refs/heads/main/assets/new-banner.png)](https://github.com/wiseaidev/bump2version)
 
 </div>
+
+## 🚀 Installation
+
+| Platform             | Command                                             |
+| -------------------- | --------------------------------------------------- |
+| **Rust binary**      | `cargo install bump2version --features rust-binary` |
+| **Cargo subcommand** | `cargo bump --help`                                 |
+| **Docker** | `docker pull wiseaidev/bump2version` |
+| **Debian/Ubuntu** | Download `.deb` from [GitHub Releases](https://github.com/wiseaidev/bump2version/releases) |
+| **RHEL/Fedora** | Download `.rpm` from [GitHub Releases](https://github.com/wiseaidev/bump2version/releases) |
+| **Windows** | Download `bump.exe` from [GitHub Releases](https://github.com/wiseaidev/bump2version/releases) |
+| **GitHub Action** | See [action.yml](https://github.com/wiseaidev/bump2version/blob/main/action.yml) |
+| **Python** | `pip install bump-rs` |
+| **Node.js** | `npm install bump2version` |
+
+> [!NOTE]
+> Installing via `cargo` installs both `bump` and `bump2version` binaries. The original `bump2version` binary is retained indefinitely for backward compatibility with existing tutorials, CI/CD pipelines, and automation scripts.
 
 ## 🤔 What does this crate provide?
 
 `bump2version` automates semantic version management for any project regardless of language. It:
 
 - **Parses** version strings using a fully configurable regex (default: semver `major.minor.patch`).
-- **Bumps** any named component (`major`, `minor`, `patch`, or custom cyclic stages).
-- **Rewrites** version occurrences across multiple files, including multiline CHANGELOG patterns, using `(?ms)` DOTALL + MULTILINE semantics identical to Python's `re.MULTILINE | re.DOTALL`.
-- **Commits and tags** via 100% pure `gix` (gitoxide); zero subprocess calls, zero `web-flow` ghost-author bugs.
-- **Reads** author identity from the local git config.
+- **Bumps** any named component (`major`, `minor`, `patch`, or custom cyclic stages like `alpha → beta → rc → stable`).
+- **Rewrites** version occurrences across multiple files, including multiline CHANGELOG patterns.
+- **Commits and tags** via 100% pure `gix` (gitoxide); zero subprocess calls.
+- **Detects** version strings across any language's manifest files (Rust, Python, JS, Go, Java, Ruby).
+- **Watches** for file changes and bumps automatically on save.
+- **Bumps workspaces** atomically across all Cargo workspace members.
 
-## 🦀 Rust
+## 💻 Command-line Interface
 
-The Rust crate is available on [crates.io](https://crates.io/crates/bump2version).
-For a complete API reference, installation guide, and worked examples, visit the
-**[Rust Usage Guide](https://github.com/wiseaidev/bump2version/blob/main/RUST.md)**.
+```sh
+# Install
+cargo install bump2version --features rust-binary
 
-The crate ships the following Cargo features:
+# Use directly
+bump --bump patch          # 0.2.1 → 0.2.2
+bump --bump minor          # 0.2.1 → 0.3.0
+bump --bump major          # 0.2.1 → 1.0.0
+bump --bump patch --dry-run  # preview only
+
+# Use as cargo subcommand
+cargo bump --bump patch
+cargo bump --bump minor --dry-run
+
+# Docker
+docker run --rm -v $(pwd):/workspace wiseaidev/bump2version --bump patch --dry-run
+
+# Multi-language auto-detect
+bump --bump patch --detect
+```
+
+| Option               | Description                                              |
+| -------------------- | -------------------------------------------------------- |
+| `--config-file`      | Config file path (default: `.bumpversion.toml`)          |
+| `--current-version`  | Override current version                                 |
+| `--bump`             | Component: `major`, `minor`, `patch`, or any custom part |
+| `--parse`            | Parse regex override                                     |
+| `--serialize`        | Serialize format override                                |
+| `--dry-run` / `-n`   | Simulate without writing files                           |
+| `--new-version`      | Explicit new version (skips bump calculation)            |
+| `--commit` / `--tag` | Git commit + lightweight tag                             |
+
+## 🔭 Features
 
 | Feature  | Default | Description                                   |
 | -------- | ------- | --------------------------------------------- |
 | `std`    | ✅      | File I/O, git integration, regex stdlib cache |
-| `cli`    | ❌      | Standalone `bump2version` binary via `clap`   |
+| `cli`    | ❌      | Standalone `bump` binary via `clap`           |
+| `watch`  | ❌      | File-system watcher (bump on file save)       |
+| `detect` | ❌      | Multi-language manifest auto-detection        |
 | `python` | ❌      | Python extension module via PyO3/maturin      |
 | `node`   | ❌      | Node.js native add-on via napi-rs             |
+
+## 🦀 Rust
+
+The Rust crate is available on [crates.io](https://crates.io/crates/bump2version). For a complete API reference visit **[RUST.md](https://github.com/wiseaidev/bump2version/blob/main/RUST.md)**.
 
 ### Quick Start
 
 ```toml
 [dependencies]
-bump2version = "0.2.0"
+bump2version = "0.2.1"
 ```
 
 ```rust
@@ -69,8 +119,7 @@ fn main() {
 Core modules (`config`, `version`, `files`, `error`) compile in `no_std + alloc`:
 
 ```toml
-# no_std (alloc required by the target):
-bump2version = { version = "0.2.0", default-features = false }
+bump2version = { version = "0.2.1", default-features = false }
 ```
 
 | Module           | `no_std+alloc` | `std` |
@@ -85,14 +134,6 @@ bump2version = { version = "0.2.0", default-features = false }
 
 ## 🐍 Python
 
-The Python bindings are published to PyPI as **`bump-rs`** and can be installed with `pip install bump-rs`.
-Built with [maturin](https://www.maturin.rs/), pre-compiled wheels for CPython 3.12+.
-
-<!-- absolute url for docs.rs because PYTHON.md is not bundled in the crate -->
-
-For installation instructions, full method signatures, and examples, read the
-**[Python Usage Guide](https://github.com/wiseaidev/bump2version/blob/main/PYTHON.md)**.
-
 ```sh
 pip install bump-rs
 ```
@@ -102,37 +143,14 @@ from bump_rs import bump_version, apply_file_change, BumpConfig
 
 print(bump_version("1.2.3", "patch"))   # "1.2.4"
 print(bump_version("1.2.3", "minor"))   # "1.3.0"
-print(bump_version("1.2.3", "major"))   # "2.0.0"
 
-content = 'version = "1.0.0"\n'
-print(apply_file_change(content, "1.0.0", "1.0.1"))
-# 'version = "1.0.1"\n'
-
-# Multiline CHANGELOG pattern
-content = "## 1.0.0\nRelease notes\n\n## 0.9.0\nOld notes\n"
-updated = apply_file_change(
-    content,
-    current_version="1.0.0",
-    new_version="1.0.1",
-    search="## {current_version}\nRelease notes",
-    replace="## {new_version}\nRelease notes",
-)
-print(updated)  # "## 1.0.1\nRelease notes\n\n## 0.9.0\nOld notes\n"
-
-# Custom parse/serialize config
 cfg = BumpConfig(parse=r"(?P<major>\d+)\.(?P<minor>\d+)", serialize="{major}.{minor}")
 print(bump_version("2.0", "minor", config=cfg))  # "2.1"
 ```
 
+For full docs see **[PYTHON.md](https://github.com/wiseaidev/bump2version/blob/main/PYTHON.md)**.
+
 ## 🟩 Node.js
-
-The Node.js bindings are published to npm as **`bump2version`** and can be installed with `npm install bump2version`.
-Built with [napi-rs](https://napi.rs/), pre-compiled `.node` add-on.
-
-<!-- absolute url for docs.rs because NODE.md is not bundled in the crate -->
-
-For installation instructions, TypeScript type definitions, and examples, read the
-**[Node.js Usage Guide](https://github.com/wiseaidev/bump2version/blob/main/NODE.md)**.
 
 ```sh
 npm install bump2version
@@ -140,31 +158,10 @@ npm install bump2version
 
 ```javascript
 const { bumpVersion, applyFileChange } = require("bump2version");
-
 console.log(bumpVersion("1.2.3", "patch")); // '1.2.4'
-console.log(bumpVersion("1.2.3", "minor")); // '1.3.0'
 ```
 
-## 💻 Command-line interface
-
-```sh
-cargo install bump2version --features rust-binary
-
-bump2version --bump patch   # 1.0.0 → 1.0.1
-bump2version --bump minor   # 1.0.0 → 1.1.0
-bump2version --bump major   # 1.0.0 → 2.0.0
-```
-
-| Option               | Description                                     |
-| -------------------- | ----------------------------------------------- |
-| `--config-file`      | Config file path (default: `.bumpversion.toml`) |
-| `--current-version`  | Override current version                        |
-| `--bump`             | Component: `major`, `minor`, `patch`            |
-| `--parse`            | Parse regex override                            |
-| `--serialize`        | Serialize format override                       |
-| `--dry-run` / `-n`   | Simulate without writing files                  |
-| `--new-version`      | Explicit new version                            |
-| `--commit` / `--tag` | Git commit + tag                                |
+For full docs see **[NODE.md](https://github.com/wiseaidev/bump2version/blob/main/NODE.md)**.
 
 ## ⚙️ Configuration File (`.bumpversion.toml`)
 
@@ -181,87 +178,137 @@ replace = 'version = "{new_version}"'
 [bumpversion:file:CHANGELOG.md]
 search = """
 ## {current_version}
-    Release notes line 1
-    Release notes line 2"""
+    Release notes line 1"""
 replace = """
 ## {new_version}
-    Release notes line 1
-    Release notes line 2"""
+    Release notes line 1"""
 ```
+
+### Pre-release Cycling
+
+```toml
+[bumpversion]
+current_version = "1.0.0-alpha.1"
+parse = (?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)-(?P<stage>[a-z]+)\.(?P<devnum>\d+)
+serialize =
+    {major}.{minor}.{patch}-{stage}.{devnum}
+    {major}.{minor}.{patch}
+
+[bumpversion:part:stage]
+optional_value = stable
+first_value = alpha
+values =
+    alpha
+    beta
+    rc
+    stable
+```
+
+### Cargo Workspace Bumping
+
+```sh
+# Atomically bump all workspace member crates
+bump --bump patch
+```
+
+The `workspace` module discovers all `[workspace]` members and bumps every `Cargo.toml` in one pass.
+
+## 🔭 GitHub Action
+
+The action is published as **[`bump-rs`](https://github.com/marketplace/actions/bump-rs)** on the GitHub Marketplace.
+
+```yaml
+- uses: wiseaidev/bump-rs@main
+  with:
+    release_type: patch   # 'major', 'minor', or 'patch' - omit to auto-detect from git tags
+    commit: "true"
+    tag: "true"
+    dry-run: "false"
+    working-directory: "."
+    config-file: ".bumpversion.toml"
+```
+
+| Output          | Description                                  |
+| --------------- | -------------------------------------------- |
+| `new_version`   | The new version string after bumping         |
+| `old_version`   | The previous version string before bumping   |
+| `release_type`  | The component that was bumped (major/minor/patch) |
 
 ## 🔒 Safety
 
-This crate enforces a zero-unsafe policy via `#![forbid(unsafe_code)]` at the crate root (except the Node.js FFI layer which requires `unsafe` for napi-rs interop). Every byte of the implementation, config parsing, regex matching, version bumping, git object creation, is written in safe Rust. The compiler will reject any future `unsafe` block introduced into the safe portions.
+This crate enforces `#![forbid(unsafe_code)]` at the crate root (except the Node.js FFI layer which requires `unsafe` for napi-rs interop). Every byte of the implementation: config parsing, regex matching, version bumping, git object creation, is written in safe Rust.
 
 ## 📊 Benchmarks
 
-### Rust (`cargo bench`)
+### CLI vs CLI: `bump` vs `bump-my-version` (hyperfine)
 
-Run with `cargo bench`. Results on x86-64 Linux (rustc stable):
+Measured with `hyperfine --runs 5 --warmup 2 -N` on x86-64 Linux (target-cpu=native release build):
 
-<details>
-<summary><code>cargo bench</code> output</summary>
+| Scenario   | Tool                       | Mean       | Min      | Max      |
+| ---------- | -------------------------- | ---------- | -------- | -------- |
+| patch bump | **`bump` (Rust)**          | **5.6 ms** | 2.6 ms   | 10.5 ms  |
+| minor bump | **`bump` (Rust)**          | **3.9 ms** | 2.8 ms   | 6.2 ms   |
+| major bump | **`bump` (Rust)**          | **2.5 ms** | 1.9 ms   | 3.2 ms   |
+| any bump   | `bump-my-version` (Python) | 482.3 ms   | 473.8 ms | 488.0 ms |
 
-| **Benchmark**                   | **Time** |
-| ------------------------------- | -------- |
-| `config_parse/minimal`          | ~12 µs   |
-| `config_parse/full_with_parts`  | ~18 µs   |
-| `version_parse/1.0.0`           | ~439 µs  |
-| `version_bump/patch`            | ~13.5 µs |
-| `version_bump/minor`            | ~14.1 µs |
-| `version_bump/major`            | ~6.0 µs  |
-| `file_replace/100 lines`        | ~247 µs  |
-| `file_replace/1 000 lines`      | ~1.35 ms |
-| `file_replace/10 000 lines`     | ~14.4 ms |
-| `multiline_replace` (CHANGELOG) | ~87 µs   |
+**CLI speedup: ~90-200× faster** depending on scenario (major bump is fastest: ~193×).
 
-</details>
+At the **library function level** (pure parse+bump+serialize, no process startup):
 
-### Python Nano-Benchmarks (`benchmarks/benchmark.py`)
+| Benchmark                      | Rust (`bump2version`) | Python (`bump-my-version`) | Speedup   |
+| ------------------------------ | --------------------- | -------------------------- | --------- |
+| parse + bump + serialize       | ~13 µs                | ~79 µs                     | ~6×       |
+| Config parse (minimal)         | ~12 µs                | ~4 800 µs                  | ~400×     |
+| File replace, 10K lines        | ~14 ms                | -                          | -         |
+| Full pipeline (CLI cold start) | **2.4 ms**            | **482 ms**                 | **~200×** |
 
-Times measured via 3-sigma filtered `timeit` (CPython 3.12, x86-64 Linux). Run with:
+Run the comparison yourself:
 
 ```sh
-pip install bump-rs bumpversion
-python benchmarks/benchmark.py
+# Rust
+hyperfine --runs 10 -N "bump --config-file .bumpversion.toml --bump patch --dry-run"
+
+# Python (if installed)
+hyperfine --runs 10 "bump-my-version bump patch --dry-run"
+
+# Full comparative suite
+chmod +x benchmarks/hyperfine/run_comparison.sh
+./benchmarks/hyperfine/run_comparison.sh
 ```
 
-#### Version Bumping: full round-trip (parse + bump + serialize)
+### Internal Benchmarks (`cargo bench`)
 
-| **Library**                            | **patch**  | **minor**  | **major**  |
-| -------------------------------------- | ---------- | ---------- | ---------- |
-| **bump-rs** (Rust, `Arc<Regex>` cache) | **~57 µs** | **~54 µs** | **~53 µs** |
-| `bump-my-version` (Python library)     | ~79 µs     | ~95 µs     | ~72 µs     |
-| Pure Python (`re.compile` + `int()`)   | ~3.6 µs    | ~2.2 µs    | ~2.2 µs    |
-| `bump-my-version` CLI (subprocess)     | ~585 ms    | ~585 ms    | ~585 ms    |
+Run with `cargo bench`. Results on x86-64 Linux after optimization (LTO=fat, opt-level=3, target-cpu=native):
 
-bump-rs is **1.4-1.8× faster** than `bump-my-version`'s Python library and **~10 000× faster** than the CLI.
-
-#### File Search/Replace
-
-| **Library**                | **Single-line** | **Multiline CHANGELOG** |
-| -------------------------- | --------------- | ----------------------- |
-| **bump-rs** (Rust, cached) | **~65 µs**      | **~104 µs**             |
-| Pure Python `re.sub`       | ~1.7 µs         | ~1.3 µs                 |
-
-**When bump-rs wins:**
-
-- **vs bump-my-version library**: 1.4-1.8× faster version bumping, correct multiline pattern semantics.
-- **vs bump-my-version CLI**: ~10 000× faster, no subprocess startup.
-- **Thread safety**: `#![forbid(unsafe_code)]` + no GIL constraint → scales across threads.
-- **Full pipeline**: config + bump + git commit entirely in safe Rust.
-
-**When pure Python wins:**
-
-- Single in-memory arithmetic on a tiny string where ~50 µs PyO3 FFI overhead dominates: use `bump_rs` in batch or for full-pipeline work.
+| Benchmark                      | Time    |
+| ------------------------------ | ------- |
+| `config_parse/minimal`         | ~12 µs  |
+| `config_parse/full_with_parts` | ~18 µs  |
+| `version_parse/1.0.0`          | ~430 ns |
+| `version_bump/patch`           | ~13 µs  |
+| `version_bump/minor`           | ~14 µs  |
+| `version_bump/major`           | ~6 µs   |
+| `prerelease_bump/stage`        | ~15 µs  |
+| `file_replace/100 lines`       | ~240 µs |
+| `file_replace/1 000 lines`     | ~1.3 ms |
+| `file_replace/10 000 lines`    | ~14 ms  |
+| `file_replace/100 000 lines`   | ~140 ms |
+| `worst_case/10 000 lines`      | ~14 ms  |
+| `multiline_replace/100x`       | ~85 µs  |
 
 ## 📚 Further Reading
 
-- [Semantic Versioning 2.0.0](https://semver.org/): the canonical version scheme.
-- [bump-my-version](https://github.com/callowayproject/bump-my-version): the Python tool this crate is feature-parity with.
-- [gitoxide (gix)](http://github.com/GitoxideLabs/gitoxide): the pure-Rust git implementation powering our git integration.
-- [PyO3](https://pyo3.rs/): Rust ↔ Python FFI framework.
-- [napi-rs](https://napi.rs/): Rust ↔ Node.js FFI framework.
+- [CLI.md](https://github.com/wiseaidev/bump2version/blob/main/CLI.md): Full CLI command dictionary
+- [RUST.md](https://github.com/wiseaidev/bump2version/blob/main/RUST.md): Rust API guide
+- [PYTHON.md](https://github.com/wiseaidev/bump2version/blob/main/PYTHON.md): Python bindings guide
+- [NODE.md](https://github.com/wiseaidev/bump2version/blob/main/NODE.md): Node.js bindings guide
+- [DOCKER.md](https://github.com/wiseaidev/bump2version/blob/main/DOCKER.md): Docker usage guide
+- [WASM.md](https://github.com/wiseaidev/bump2version/blob/main/WASM.md): WebAssembly + Yew guide
+- [PACKAGING.md](https://github.com/wiseaidev/bump2version/blob/main/PACKAGING.md): Debian/RPM packaging
+- [examples/yew-app](https://github.com/wiseaidev/bump2version/tree/main/examples/yew-app): Browser-side version bumper (Yew + WASM)
+- [Semantic Versioning 2.0.0](https://semver.org/)
+- [bump-my-version](https://github.com/callowayproject/bump-my-version): the Python tool this crate is feature-parity with
+- [gitoxide (gix)](https://github.com/GitoxideLabs/gitoxide): the pure-Rust git implementation
 
 ## 📄 License
 

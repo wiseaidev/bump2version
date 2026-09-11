@@ -1,0 +1,12 @@
+[bumpversion]
+current_version = 0.1.0
+commit = false
+tag = false
+
+[bumpversion:file:my-ruby-gem.gemspec]
+search = s.version = "{current_version}"
+replace = s.version = "{new_version}"
+
+[bumpversion:file:Gemfile]
+search = GEM_VERSION = "{current_version}"
+replace = GEM_VERSION = "{new_version}"

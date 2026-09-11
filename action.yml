@@ -1,0 +1,120 @@
+name: bump-rs
+description: >-
+  Bump a project version via the bump2version Rust CLI. Auto-detects release type from git tags or accepts major/minor/patch.
+author: Mahmoud Harmouch <oss@wiseai.dev>
+
+inputs:
+  release_type:
+    description: >
+      The version component to bump: 'major', 'minor', or 'patch'.
+      When omitted the action derives the type automatically from the
+      difference between the latest and previous git tags.
+    required: false
+    default: ""
+  working-directory:
+    description: Working directory of the project to bump.
+    required: false
+    default: "."
+  config-file:
+    description: Path to the .bumpversion.toml configuration file.
+    required: false
+    default: ".bumpversion.toml"
+  dry-run:
+    description: >
+      When 'true', simulate the bump without writing files or creating
+      git objects.
+    required: false
+    default: "false"
+  commit:
+    description: >
+      When 'true', create a git commit after bumping.
+    required: false
+    default: "true"
+  tag:
+    description: >
+      When 'true', create a git tag after bumping.
+    required: false
+    default: "false"
+
+outputs:
+  release_type:
+    description: The version component that was bumped (major, minor, or patch).
+    value: ${{ steps.semver-diff.outputs.release_type || inputs.release_type }}
+  new_version:
+    description: The new version string after bumping.
+    value: ${{ steps.bump.outputs.new_version }}
+  old_version:
+    description: The previous version string before bumping.
+    value: ${{ steps.bump.outputs.old_version }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Derive release type from semver diff
+      if: inputs.release_type == ''
+      id: semver-diff
+      uses: actions/semver-diff@v3
+      with:
+        initial_release_type: ""
+
+    - name: Install Rust stable toolchain
+      if: steps.semver-diff.outputs.release_type != '' || inputs.release_type != ''
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+
+    - name: Restore bump2version binary cache
+      uses: actions/cache@v4
+      id: cache-bump2version
+      if: steps.semver-diff.outputs.release_type != '' || inputs.release_type != ''
+      with:
+        path: |
+          ~/.cargo/bin/bump
+          ~/.cargo/bin/cargo-bump
+        key: ${{ runner.os }}-bump2version-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install bump2version CLI
+      shell: bash
+      if: >
+        steps.cache-bump2version.outputs.cache-hit != 'true' &&
+        (steps.semver-diff.outputs.release_type != '' || inputs.release_type != '')
+      run: cargo install bump2version --features rust-binary
+
+    - name: Bump version
+      id: bump
+      shell: bash
+      if: steps.semver-diff.outputs.release_type != '' || inputs.release_type != ''
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        PART="${{ steps.semver-diff.outputs.release_type || inputs.release_type }}"
+        DRY_RUN_FLAG=""
+        if [[ "${{ inputs.dry-run }}" == "true" ]]; then
+          DRY_RUN_FLAG="--dry-run"
+        fi
+        COMMIT_FLAG=""
+        if [[ "${{ inputs.commit }}" == "true" ]]; then
+          COMMIT_FLAG="--commit"
+        fi
+        TAG_FLAG=""
+        if [[ "${{ inputs.tag }}" == "true" ]]; then
+          TAG_FLAG="--tag"
+        fi
+
+        OLD_VERSION=$(grep -m1 'current_version' "${{ inputs.config-file }}" \
+          | sed 's/.*= *"\?\([^"]*\)"\?.*/\1/')
+        echo "old_version=${OLD_VERSION}" >> $GITHUB_OUTPUT
+
+        bump \
+          --config-file "${{ inputs.config-file }}" \
+          --bump "${PART}" \
+          ${DRY_RUN_FLAG} \
+          ${COMMIT_FLAG} \
+          ${TAG_FLAG}
+
+        NEW_VERSION=$(grep -m1 'current_version' "${{ inputs.config-file }}" \
+          | sed 's/.*= *"\?\([^"]*\)"\?.*/\1/')
+        echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+
+branding:
+  icon: arrow-up-circle
+  color: blue

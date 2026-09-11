@@ -39,6 +39,7 @@ use crate::error::BumpError;
 use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
+use memchr::memchr;
 use regex::Regex;
 
 /// Returns a cached [`Arc<Regex>`] for `pattern`.
@@ -51,7 +52,7 @@ fn cached_regex(pattern: &str) -> Result<Arc<Regex>, BumpError> {
     use std::sync::{OnceLock, RwLock};
 
     static CACHE: OnceLock<RwLock<HashMap<String, Arc<Regex>>>> = OnceLock::new();
-    let cache = CACHE.get_or_init(|| RwLock::new(HashMap::new()));
+    let cache = CACHE.get_or_init(|| RwLock::new(HashMap::with_capacity(8)));
 
     {
         let guard = cache.read().unwrap_or_else(|p| p.into_inner());
@@ -95,29 +96,61 @@ fn cached_regex(pattern: &str) -> Result<Arc<Regex>, BumpError> {
 /// - **Time**: O(n) where n = `template.len()`.
 /// - **Space**: O(n) for the output string.
 fn render_pattern(template: &str, current_version: &str, new_version: &str) -> String {
-    template
-        .replace("{current_version}", current_version)
-        .replace("{new_version}", new_version)
+    let bytes = template.as_bytes();
+    let len = bytes.len();
+    let mut result = String::with_capacity(len + 16);
+    let mut pos = 0;
+
+    while pos < len {
+        let remaining = &bytes[pos..];
+        let open = match memchr(b'{', remaining) {
+            Some(i) => i,
+            None => {
+                result.push_str(&template[pos..]);
+                break;
+            }
+        };
+
+        result.push_str(&template[pos..pos + open]);
+        let after_open = pos + open + 1;
+
+        if after_open >= len {
+            result.push('{');
+            break;
+        }
+
+        let rest = &bytes[after_open..];
+        match memchr(b'}', rest) {
+            Some(close) => {
+                let key = &template[after_open..after_open + close];
+                match key {
+                    "current_version" => result.push_str(current_version),
+                    "new_version" => result.push_str(new_version),
+                    _ => {
+                        result.push('{');
+                        result.push_str(key);
+                        result.push('}');
+                    }
+                }
+                pos = after_open + close + 1;
+            }
+            None => {
+                result.push('{');
+                pos = after_open;
+            }
+        }
+    }
+
+    result
 }
 
 /// Escapes a string for use as a literal regex pattern.
-///
-/// Wraps [`regex::escape`] so callers do not need to import the `regex` crate
-/// directly.
-///
-/// # Arguments
-///
-/// * `text` - The raw string to escape.
-///
-/// # Returns
-///
-/// A `String` safe for use as a `regex::Regex` pattern that matches `text`
-/// literally.
 ///
 /// # Complexity
 ///
 /// - **Time**: O(n) where n = `text.len()`.
 /// - **Space**: O(n).
+#[inline]
 fn escape_literal(text: &str) -> String {
     regex::escape(text)
 }
@@ -170,7 +203,7 @@ pub fn apply_file_change(
     let rendered_search = render_pattern(search_template, current_version, new_version);
     let rendered_replace = render_pattern(replace_template, current_version, new_version);
 
-    let is_multiline = rendered_search.contains('\n');
+    let is_multiline = memchr(b'\n', rendered_search.as_bytes()).is_some();
 
     let pattern = if is_multiline {
         let escaped = escape_literal(&rendered_search);
@@ -236,8 +269,12 @@ pub fn apply_config_version_update(
         ),
     ];
     for (old, new) in &candidates {
-        if content.contains(old.as_str()) {
-            return content.replacen(old.as_str(), new.as_str(), 1);
+        if let Some(start) = memchr::memmem::find(content.as_bytes(), old.as_bytes()) {
+            let mut result = String::with_capacity(content.len());
+            result.push_str(&content[..start]);
+            result.push_str(new.as_str());
+            result.push_str(&content[start + old.len()..]);
+            return result;
         }
     }
     content.to_string()

@@ -1,0 +1,36 @@
+[package]
+name = "bump2version-yew-app"
+version = "0.1.0"
+edition = "2024"
+description = "Browser-side version bumper: bump2version core compiled to WebAssembly with a Yew UI"
+license = "MIT"
+
+[[bin]]
+name = "app"
+path = "src/main.rs"
+
+[dependencies]
+bump2version = { path = "../..", default-features = false, features = ["std"] }
+input-rs = { version = "0.2.6", features = ["yew"] }
+wasm-bindgen = { version = "0.2.128", default-features = false }
+web-sys = { version = "0.3.105", default-features = false, features = [
+    "Document",
+    "Element",
+    "EventTarget",
+    "HtmlElement",
+    "HtmlInputElement",
+    "HtmlSelectElement",
+    "KeyboardEvent",
+    "MouseEvent",
+    "ScrollIntoViewOptions",
+    "ScrollBehavior",
+    "Window",
+    "console",
+] }
+yew = { version = "0.22.0", default-features = false, features = ["csr"] }
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = "thin"
+strip = "symbols"
