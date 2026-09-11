@@ -1,0 +1,7 @@
+[package]
+name = "my-rust-lib"
+version = "0.1.0"
+edition = "2024"
+description = "Example Rust library whose version is managed by bump2version"
+
+[dependencies]

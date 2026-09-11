@@ -13,8 +13,30 @@ use bump2version::utils::{collect_file_configs, compute_new_version, load_config
 use clap::Parser;
 use std::fs;
 
+/// Entry point for the `bump` / `cargo bump` CLI.
+///
+/// Parses arguments (stripping the leading `"bump"` token when invoked as a
+/// Cargo subcommand), loads the config, computes the new version, updates all
+/// registered files, and optionally creates a git commit and tag.
+///
+/// When `--watch` is active (requires `watch` feature) the function enters an
+/// infinite event loop and never returns under normal operation.
+///
+/// When `--detect` is active (requires `detect` feature) multi-language
+/// manifest files are scanned and updated in addition to the config-registered
+/// files.
 fn main() -> Result<(), BumpError> {
-    let args = Cli::parse();
+    let mut raw: Vec<String> = std::env::args().collect();
+    if raw.get(1).map(|s| s.as_str()) == Some("bump") {
+        raw.remove(1);
+    }
+
+    let args = Cli::parse_from(raw);
+
+    #[cfg(feature = "watch")]
+    if args.watch {
+        return bump2version::watch::run_watch(&args.config_file, &args.bump);
+    }
 
     let cfg = load_config(&args.config_file, Some(&args.parse), Some(&args.serialize))?;
 
@@ -56,16 +78,8 @@ fn main() -> Result<(), BumpError> {
         .replace("{new_version}", &new_version)
         .replace("{current_version}", &current_version);
 
-    let current_dir = std::env::current_dir()?;
-    let repo = gix::open(current_dir.to_str().unwrap())
-        .map_err(|e| BumpError::GitError("open_repo".into(), e.to_string()))?;
-
-    if !cfg.allow_dirty {
-        assert_clean_working_tree(&repo)?;
-    }
-
     let file_configs = collect_file_configs(&cfg, &args.files);
-    let mut changed_paths: Vec<String> = Vec::new();
+    let mut changed_paths: Vec<String> = Vec::with_capacity(file_configs.len() + 4);
 
     for fc in &file_configs {
         let content = fs::read_to_string(&fc.path)?;
@@ -74,6 +88,26 @@ fn main() -> Result<(), BumpError> {
             fs::write(&fc.path, &updated)?;
         }
         changed_paths.push(fc.path.clone());
+    }
+
+    #[cfg(feature = "detect")]
+    if args.detect {
+        let cwd = std::env::current_dir()?;
+        let detected = bump2version::detect::detect_and_bump(
+            cwd.to_str().unwrap_or("."),
+            &current_version,
+            &new_version,
+            dry_run,
+        )?;
+        for path in detected {
+            if !changed_paths.contains(&path) {
+                if dry_run {
+                    println!("[detect][dry-run] Would update: {path}");
+                } else {
+                    changed_paths.push(path);
+                }
+            }
+        }
     }
 
     if fs::metadata(&args.config_file).is_ok() {
@@ -87,8 +121,15 @@ fn main() -> Result<(), BumpError> {
     }
 
     if do_commit && !dry_run {
-        let (author_name, author_email) = get_git_author(&repo)?;
+        let current_dir = std::env::current_dir()?;
+        let repo = gix::open(current_dir.to_str().unwrap())
+            .map_err(|e| BumpError::GitError("open_repo".into(), e.to_string()))?;
 
+        if !cfg.allow_dirty {
+            assert_clean_working_tree(&repo)?;
+        }
+
+        let (author_name, author_email) = get_git_author(&repo)?;
         let commit_id = commit_files(&repo, &changed_paths, &message, &author_name, &author_email)?;
 
         println!("Committed: {commit_id}");
@@ -97,7 +138,7 @@ fn main() -> Result<(), BumpError> {
             create_tag(&repo, &tag_name, commit_id)?;
             println!("Git lightweight tag created: refs/tags/{tag_name}");
         }
-    } else if do_commit {
+    } else if do_commit && dry_run {
         println!(
             "[dry-run] Would commit {} file(s) with message: {}",
             changed_paths.len(),

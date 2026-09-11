@@ -90,13 +90,16 @@ fn test_serialize_version_uses_format() {
 #[test]
 fn test_extract_format_keys_standard() {
     let keys = extract_format_keys("{major}.{minor}.{patch}");
-    assert_eq!(keys, vec!["major", "minor", "patch"]);
+    assert_eq!(keys.into_vec(), vec!["major", "minor", "patch"]);
 }
 
 #[test]
 fn test_extract_format_keys_with_stage() {
     let keys = extract_format_keys("{major}.{minor}.{patch}-{stage}.{devnum}");
-    assert_eq!(keys, vec!["major", "minor", "patch", "stage", "devnum"]);
+    assert_eq!(
+        keys.into_vec(),
+        vec!["major", "minor", "patch", "stage", "devnum"]
+    );
 }
 
 #[test]

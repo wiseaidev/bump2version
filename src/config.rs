@@ -182,7 +182,11 @@ impl Default for BumpConfig {
 /// - **Time**: O(n) where n = `line.len()`.
 /// - **Space**: O(1).
 fn strip_continuation(line: &str) -> Option<&str> {
-    if line.starts_with('\t') || line.starts_with("    ") || line.starts_with("  ") {
+    let bytes = line.as_bytes();
+    if bytes.first().copied() == Some(b'\t')
+        || bytes.starts_with(b"    ")
+        || bytes.starts_with(b"  ")
+    {
         Some(line.trim())
     } else {
         None
@@ -259,6 +263,14 @@ fn strip_quotes(val: &str) -> String {
         s = &s[1..s.len() - 1];
     }
     s.to_string()
+}
+
+/// Parses bool-like string values without branching on multiple patterns.
+///
+/// Returns `true` for `"true"` (case-insensitive) or `"1"`.
+#[inline]
+fn parse_bool(val: &str) -> bool {
+    val.trim().eq_ignore_ascii_case("true") || val.trim() == "1"
 }
 
 /// Parses a `.bumpversion.toml` configuration string into a [`BumpConfig`].
@@ -343,13 +355,8 @@ pub fn parse_config(content: &str) -> Result<BumpConfig, BumpError> {
             match &current_section {
                 Section::Global => match key.as_str() {
                     "current_version" => cfg.current_version = Some(value.trim().to_string()),
-                    "commit" => {
-                        cfg.commit =
-                            value.trim().eq_ignore_ascii_case("true") || value.trim() == "1"
-                    }
-                    "tag" => {
-                        cfg.tag = value.trim().eq_ignore_ascii_case("true") || value.trim() == "1"
-                    }
+                    "commit" => cfg.commit = parse_bool(&value),
+                    "tag" => cfg.tag = parse_bool(&value),
                     "parse" => cfg.parse = value.trim().to_string(),
                     "serialize" => {
                         cfg.serialize = value
@@ -363,10 +370,7 @@ pub fn parse_config(content: &str) -> Result<BumpConfig, BumpError> {
                     "replace" => cfg.replace = value,
                     "message" => cfg.message = value.trim().to_string(),
                     "tag_name" => cfg.tag_name = value.trim().to_string(),
-                    "allow_dirty" => {
-                        cfg.allow_dirty =
-                            value.trim().eq_ignore_ascii_case("true") || value.trim() == "1"
-                    }
+                    "allow_dirty" => cfg.allow_dirty = parse_bool(&value),
                     _ => {}
                 },
                 Section::File(path) => {
@@ -386,13 +390,9 @@ pub fn parse_config(content: &str) -> Result<BumpConfig, BumpError> {
                                 )
                             }
                             "ignore_missing_version" => {
-                                fc.ignore_missing_version =
-                                    value.trim().eq_ignore_ascii_case("true") || value.trim() == "1"
+                                fc.ignore_missing_version = parse_bool(&value)
                             }
-                            "ignore_missing_file" => {
-                                fc.ignore_missing_file =
-                                    value.trim().eq_ignore_ascii_case("true") || value.trim() == "1"
-                            }
+                            "ignore_missing_file" => fc.ignore_missing_file = parse_bool(&value),
                             _ => {}
                         }
                     }

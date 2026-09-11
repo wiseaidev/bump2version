@@ -9,6 +9,7 @@
 #![cfg_attr(not(feature = "std"), doc = "")]
 #![cfg_attr(feature = "std", doc = include_str!("../README.md"))]
 #![cfg_attr(feature = "std", doc = include_str!("../RUST.md"))]
+#![cfg_attr(feature = "std", doc = include_str!("../WASM.md"))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/wiseaidev/bump2version/refs/heads/main/assets/logo.png",
     html_favicon_url = "https://raw.githubusercontent.com/wiseaidev/bump2version/refs/heads/main/assets/favicon.png"
@@ -23,7 +24,7 @@ pub mod error;
 pub mod files;
 pub mod version;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "git")]
 pub mod git;
 
 #[cfg(feature = "std")]
@@ -32,6 +33,23 @@ pub mod utils;
 #[cfg(all(feature = "cli", feature = "std"))]
 #[cfg_attr(docsrs, doc(cfg(all(feature = "cli", feature = "std"))))]
 pub mod cli;
+
+#[cfg(all(feature = "cli", feature = "std", feature = "watch"))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(all(feature = "cli", feature = "std", feature = "watch")))
+)]
+pub mod watch;
+
+#[cfg(all(feature = "cli", feature = "std", feature = "detect"))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(all(feature = "cli", feature = "std", feature = "detect")))
+)]
+pub mod detect;
+
+#[cfg(feature = "std")]
+pub mod workspace;
 
 #[cfg(all(feature = "python", not(feature = "node"), feature = "std"))]
 #[cfg_attr(docsrs, doc(cfg(all(feature = "python", feature = "std"))))]

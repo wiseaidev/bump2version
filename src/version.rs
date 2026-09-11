@@ -47,9 +47,10 @@ use crate::config::{BumpConfig, PartConfig};
 use crate::error::BumpError;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use indexmap::IndexMap;
+use memchr::memchr;
 use regex::Regex;
+use smallvec::SmallVec;
 
 /// Returns a cached [`Arc<Regex>`] for `pattern`, compiling it on the first
 /// call and reusing the compiled automaton on all subsequent calls.
@@ -72,7 +73,7 @@ fn cached_regex(pattern: &str) -> Result<Arc<Regex>, BumpError> {
     use std::sync::{OnceLock, RwLock};
 
     static CACHE: OnceLock<RwLock<HashMap<String, Arc<Regex>>>> = OnceLock::new();
-    let cache = CACHE.get_or_init(|| RwLock::new(HashMap::new()));
+    let cache = CACHE.get_or_init(|| RwLock::new(HashMap::with_capacity(4)));
 
     {
         let guard = cache.read().unwrap_or_else(|p| p.into_inner());
@@ -155,7 +156,7 @@ pub fn parse_version(version_str: &str, cfg: &BumpConfig) -> Result<Version, Bum
         BumpError::VersionNotFound(version_str.to_string(), "<version string>".to_string())
     })?;
 
-    let mut version: Version = IndexMap::new();
+    let mut version: Version = IndexMap::with_capacity(8);
 
     for name in re.capture_names().flatten() {
         let val = caps
@@ -185,7 +186,7 @@ pub fn parse_version(version_str: &str, cfg: &BumpConfig) -> Result<Version, Bum
 }
 
 /// Bumps the named component in `version` and resets all downstream
-/// components according to the configured serialisation order.
+/// components using branchless arithmetic where possible.
 ///
 /// "Downstream" means all components that appear **after** the bumped one in
 /// the serialisation format string.  Numeric downstream components are reset
@@ -223,7 +224,7 @@ pub fn bump_version(
         return Err(BumpError::UnknownComponent(part_to_bump.to_string()));
     }
 
-    let serialize_order: Vec<String> = extract_format_keys(&cfg.serialize[0]);
+    let serialize_order: SmallVec<[String; 8]> = extract_format_keys(&cfg.serialize[0]);
 
     let mut bumped_version = version.clone();
     let mut found = false;
@@ -234,9 +235,10 @@ pub fn bump_version(
             None => continue,
         };
 
-        if key == part_to_bump {
-            found = true;
+        let is_target = key == part_to_bump;
+        found |= is_target;
 
+        if is_target {
             if let Some(pc) = cfg.parts.get(key.as_str())
                 && !pc.values.is_empty()
             {
@@ -267,7 +269,7 @@ pub fn bump_version(
                 part.cycle_index = idx;
                 continue;
             }
-            part.value = "0".to_string();
+            part.value = String::from("0");
             part.cycle_index = None;
         }
     }
@@ -300,7 +302,7 @@ pub fn bump_version(
 ///   format.
 pub fn serialize_version(version: &Version, cfg: &BumpConfig) -> String {
     for format in &cfg.serialize {
-        let keys = extract_format_keys(format);
+        let keys: SmallVec<[String; 8]> = extract_format_keys(format);
 
         let all_optional_at_optional = keys.iter().all(|key| {
             if let Some(part) = version.get(key.as_str()) {
@@ -339,7 +341,8 @@ pub fn serialize_version(version: &Version, cfg: &BumpConfig) -> String {
     String::new()
 }
 
-/// Extracts the placeholder key names from a format string.
+/// Extracts placeholder key names from a format string using byte-level
+/// scanning via [`memchr`] for maximum throughput.
 ///
 /// For example, `"{major}.{minor}.{patch}"` yields
 /// `["major", "minor", "patch"]`.
@@ -356,23 +359,37 @@ pub fn serialize_version(version: &Version, cfg: &BumpConfig) -> String {
 ///
 /// - **Time**: O(n) where n = `format.len()`.
 /// - **Space**: O(k) where k = number of placeholders.
-pub fn extract_format_keys(format: &str) -> Vec<String> {
-    let mut keys = Vec::new();
-    let mut rest = format;
-    while let Some(open) = rest.find('{') {
-        rest = &rest[open + 1..];
-        if let Some(close) = rest.find('}') {
-            keys.push(rest[..close].to_string());
-            rest = &rest[close + 1..];
-        } else {
+pub fn extract_format_keys(format: &str) -> SmallVec<[String; 8]> {
+    let bytes = format.as_bytes();
+    let len = bytes.len();
+    let mut keys = SmallVec::new();
+    let mut pos = 0;
+
+    while pos < len {
+        let remaining = &bytes[pos..];
+        let open = match memchr(b'{', remaining) {
+            Some(i) => i,
+            None => break,
+        };
+        let after_open = pos + open + 1;
+        if after_open >= len {
             break;
         }
+        let rest = &bytes[after_open..];
+        let close = match memchr(b'}', rest) {
+            Some(i) => i,
+            None => break,
+        };
+        keys.push(format[after_open..after_open + close].to_string());
+        pos = after_open + close + 1;
     }
+
     keys
 }
 
 /// Renders a format string by substituting `{key}` placeholders with the
-/// corresponding component values from `version`.
+/// corresponding component values from `version` in a single allocation
+/// pass.
 ///
 /// Unknown placeholders are left as-is.
 ///
@@ -390,11 +407,50 @@ pub fn extract_format_keys(format: &str) -> Vec<String> {
 /// - **Time**: O(n × k) where n = `format.len()` and k = placeholder count.
 /// - **Space**: O(n) for the output.
 pub fn render_format(format: &str, version: &Version) -> String {
-    let mut result = format.to_string();
-    for (key, part) in version.iter() {
-        let placeholder = format!("{{{}}}", key);
-        result = result.replace(&placeholder, &part.value);
+    let bytes = format.as_bytes();
+    let len = bytes.len();
+    let mut result = String::with_capacity(len);
+    let mut pos = 0;
+
+    while pos < len {
+        let remaining = &bytes[pos..];
+        let open = match memchr(b'{', remaining) {
+            Some(i) => i,
+            None => {
+                result.push_str(&format[pos..]);
+                break;
+            }
+        };
+
+        result.push_str(&format[pos..pos + open]);
+        let after_open = pos + open + 1;
+
+        if after_open >= len {
+            result.push('{');
+            break;
+        }
+
+        let rest = &bytes[after_open..];
+        match memchr(b'}', rest) {
+            Some(close) => {
+                let key = &format[after_open..after_open + close];
+                match version.get(key) {
+                    Some(part) => result.push_str(&part.value),
+                    None => {
+                        result.push('{');
+                        result.push_str(key);
+                        result.push('}');
+                    }
+                }
+                pos = after_open + close + 1;
+            }
+            None => {
+                result.push('{');
+                pos = after_open;
+            }
+        }
     }
+
     result
 }
 

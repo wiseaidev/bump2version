@@ -1,0 +1,8 @@
+[bumpversion]
+current_version = 1.2.3
+commit = false
+tag = false
+
+[bumpversion:file:fixtures/version.txt]
+search = {current_version}
+replace = {new_version}

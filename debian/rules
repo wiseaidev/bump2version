@@ -1,0 +1,6 @@
+#!/usr/bin/make -f
+export DH_CARGO_BUILDFLAGS=--features=rust-binary
+export RUSTFLAGS=-C opt-level=3 -C lto=fat
+
+%:
+	dh $@ --buildsystem=cargo

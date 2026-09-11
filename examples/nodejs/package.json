@@ -1,0 +1,11 @@
+{
+  "name": "my-node-app",
+  "version": "0.1.0",
+  "description": "Example Node.js project managed by bump2version",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Mahmoud Harmouch",
+  "license": "MIT"
+}
