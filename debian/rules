@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE = 1
+export RUSTFLAGS = -C strip=symbols
+export CARGO_BUILD_FLAGS = --release --features=rust-binary
+
+%:
+	dh $@
+
+override_dh_auto_clean:
+	cargo clean || true
+	rm -rf target .cargo
+
+override_dh_auto_build:
+	cargo build $(CARGO_BUILD_FLAGS)
+
+override_dh_auto_install:
+	install -Dm755 target/release/bump2version debian/bump2version/usr/bin/bump2version
+	install -Dm755 target/release/bump debian/bump2version/usr/bin/bump
+	install -Dm755 target/release/cargo-bump debian/bump2version/usr/bin/cargo-bump
+	install -Dm644 README.md debian/bump2version/usr/share/doc/bump2version/README.md
+
+override_dh_auto_test:
+	@echo "Skipping tests during package build"

@@ -1,0 +1,32 @@
+Source: bump2version
+Section: devel
+Priority: optional
+Maintainer: Mahmoud Harmouch <oss@wiseai.dev>
+Build-Depends: debhelper-compat (= 13),
+               cargo,
+               rustc,
+               pkg-config,
+               libssl-dev
+Standards-Version: 4.7.2
+Homepage: https://github.com/wiseaidev/bump2version
+Vcs-Git: https://github.com/wiseaidev/bump2version.git
+Vcs-Browser: https://github.com/wiseaidev/bump2version
+Rules-Requires-Root: no
+
+Package: bump2version
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${misc:Depends}
+Description: High-performance version bumper CLI written in Rust
+ bump2version (bump) is a fully compatible, Rust-native reimplementation of
+ bumpversion/bump-my-version. It manages version numbers across any file type,
+ creates git commits and tags, and supports Cargo workspaces, pre-release
+ cycling, watch mode, and multi-language manifest auto-detection.
+ .
+ Features include:
+  * Increments major, minor, patch, or any custom version component
+  * Multi-line search/replace patterns
+  * Cargo workspace atomic bumping
+  * Watch mode for automated bumping on save
+  * Multi-language auto-detection (Rust, Python, JS, Go, Java, Ruby)
+  * Usable as cargo subcommand: cargo bump

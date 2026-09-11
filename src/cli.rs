@@ -34,7 +34,7 @@ fn styles() -> Styles {
         .placeholder(AnsiColor::Green.on_default())
 }
 
-/// Command-line interface for the `bump2version` tool.
+/// Command-line interface for the `bump` tool.
 ///
 /// All fields correspond to configuration keys supported in `.bumpversion.toml`.
 /// Command-line values take precedence over the config file.
@@ -42,7 +42,7 @@ fn styles() -> Styles {
 #[command(
     author = "Mahmoud Harmouch",
     version,
-    name = "bump2version",
+    name = "bump",
     propagate_version = true,
     styles = styles(),
     help_template = r#"{about-with-newline}
@@ -71,13 +71,18 @@ FEATURES:
   - Multiline Search/Replace: Match multi-line patterns in any file.
   - Configurability: Use a configuration file or CLI options to customize.
   - Git Integration: Create commits and tags; uses your configured identity.
+  - Cargo Subcommand: Use as `cargo bump` after installation.
+  - Multi-Language: Auto-detect and bump versions across any language.
 
 EXAMPLES:
   Bump patch version:
-    bump2version --current-version 1.2.3 --bump patch
+    bump --current-version 1.2.3 --bump patch
 
   Bump minor version and create a commit:
-    bump2version --current-version 1.2.3 --bump minor --commit
+    bump --current-version 1.2.3 --bump minor --commit
+
+  Use as cargo subcommand:
+    cargo bump --bump patch
 
 For more information, visit: https://github.com/wiseaidev/bump2version
 "#
@@ -97,8 +102,7 @@ pub struct Cli {
 
     /// The version string currently present in the project.
     ///
-    /// When omitted, `bump2version` reads `current_version` from the config
-    /// file.
+    /// When omitted, `bump` reads `current_version` from the config file.
     #[arg(long = "current-version", value_name = "VERSION")]
     pub current_version: Option<String>,
 
@@ -139,7 +143,7 @@ pub struct Cli {
     /// Simulate the bump without writing any files or creating any git
     /// objects.
     ///
-    /// Useful for previewing what `bump2version` would do.
+    /// Useful for previewing what `bump` would do.
     #[arg(short = 'n', long = "dry-run", default_value_t = false)]
     pub dry_run: bool,
 
@@ -178,6 +182,23 @@ pub struct Cli {
     /// the new version string using the global `search`/`replace` patterns.
     #[arg(value_name = "file")]
     pub files: Vec<String>,
+
+    /// Enter watch mode: monitor the config file and all registered files
+    /// for writes and re-bump the version automatically on every save.
+    ///
+    /// Requires the `watch` Cargo feature.
+    #[cfg(feature = "watch")]
+    #[arg(long = "watch", default_value_t = false)]
+    pub watch: bool,
+
+    /// Auto-detect version strings across all language manifests in the
+    /// current directory tree (Rust, Python, JavaScript, Go, Java, Ruby)
+    /// and update them in addition to the files listed in the config.
+    ///
+    /// Requires the `detect` Cargo feature.
+    #[cfg(feature = "detect")]
+    #[arg(long = "detect", default_value_t = false)]
+    pub detect: bool,
 }
 
 // Copyright 2026 Mahmoud Harmouch.

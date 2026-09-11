@@ -76,7 +76,6 @@ pub enum BumpError {
     /// A Git operation failed.
     ///
     /// Field 0 is a description of the operation, field 1 is the cause.
-    /// Only available with the `std` feature.
     #[error("Git error during '{0}': {1}")]
     GitError(String, String),
 
