@@ -4,8 +4,10 @@ commit = false
 tag = false
 
 [bumpversion:file:Cargo.toml]
-search = version = "{current_version}"
-replace = version = "{new_version}"
+search = name = "bump2version"
+    version = "{current_version}"
+replace = name = "bump2version"
+    version = "{new_version}"
 
 [bumpversion:file:package.json]
 search = "version": "{current_version}"
@@ -34,3 +36,7 @@ replace = {new_version}
 [bumpversion:file:rpm/bump2version.spec]
 search = Version: {current_version}
 replace = Version: {new_version}
+
+[bumpversion:file:README.md]
+search = "uses: wiseaidev/bump2version@v{current_version}"
+replace = "uses: wiseaidev/bump2version@v{new_version}"

@@ -14,7 +14,7 @@
 
 use crate::config::{BumpConfig, FileConfig, parse_config_file};
 use crate::error::BumpError;
-use crate::version::{bump_version, parse_version, serialize_version};
+use crate::version::{BumpPart, bump_version, parse_version, serialize_version};
 use std::collections::HashSet;
 
 /// Reads file paths declared in `[bumpversion:file:PATH]` sections of the
@@ -52,8 +52,9 @@ pub fn read_files_from_config(config_path: &str) -> Result<HashSet<String>, Bump
 /// # Arguments
 ///
 /// * `config_path` - Filesystem path to the `.bumpversion.toml` file.
-/// * `bump`        - Name of the version component to increment (e.g.
-///   `"patch"`).
+/// * `bump`        - The [`BumpPart`] identifying which component to increment.
+/// * `current_version_override` - Optional version string that overrides the
+///   value stored in the config file.
 /// * `parse_re`    - Optional regex override from the CLI; when `None` the
 ///   value from the config file is used.
 /// * `serialize_fmt` - Optional serialise format override from the CLI.
@@ -69,7 +70,7 @@ pub fn read_files_from_config(config_path: &str) -> Result<HashSet<String>, Bump
 /// - **Space**: O(L) for the config parse.
 pub fn compute_new_version(
     config_path: &str,
-    bump: &str,
+    bump: &BumpPart,
     current_version_override: Option<&str>,
     parse_re: Option<&str>,
     serialize_fmt: Option<&str>,

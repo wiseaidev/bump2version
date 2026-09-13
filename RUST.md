@@ -37,11 +37,11 @@ assert_eq!(v["patch"].value, "3");
 
 ```rust
 use bump2version::config::BumpConfig;
-use bump2version::version::{parse_version, bump_version, serialize_version};
+use bump2version::version::{BumpPart, bump_version, serialize_version, parse_version};
 
 let cfg = BumpConfig::default();
 let v = parse_version("1.2.3", &cfg).unwrap();
-let bumped = bump_version(&v, "minor", &cfg).unwrap();
+let bumped = bump_version(&v, &BumpPart::Minor, &cfg).unwrap();
 assert_eq!(serialize_version(&bumped, &cfg), "1.3.0");
 ```
 
@@ -62,10 +62,10 @@ use bump2version::files::apply_file_change;
 
 let cfg = BumpConfig::default();
 let mut fc = FileConfig::new("Cargo.toml");
-fc.search = Some(r#"version = "{current_version}""#.to_string());
-fc.replace = Some(r#"version = "{new_version}""#.to_string());
+fc.search = Some(r#"name = "bump2version"\nversion = "{current_version}""#.to_string());
+fc.replace = Some(r#"name = "bump2version"\nversion = "{new_version}""#.to_string());
 
-let content = r#"version = "1.0.0""#.to_string();
+let content = r#"name = "bump2version"\nversion = "1.0.0""#.to_string();
 let updated = apply_file_change(&content, &fc, &cfg, "1.0.0", "1.0.1").unwrap();
 assert!(updated.contains("1.0.1"));
 ```

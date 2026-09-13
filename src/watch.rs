@@ -18,19 +18,24 @@
 //! ```no_run
 //! # #[cfg(feature = "watch")]
 //! use bump2version::watch::run_watch;
+//! use bump2version::version::BumpPart;
 //! # #[cfg(feature = "watch")]
-//! run_watch(".bumpversion.toml", "patch").unwrap();
+//! run_watch(".bumpversion.toml", &BumpPart::Patch).unwrap();
 //! ```
 
 use crate::config::parse_config_file;
 use crate::error::BumpError;
 use crate::files::{apply_config_version_update, apply_file_change};
 use crate::utils::{collect_file_configs, compute_new_version};
+use crate::version::BumpPart;
 use notify::{Event, EventKind, RecursiveMode, Watcher, recommended_watcher};
 use std::fs;
 use std::path::Path;
 use std::sync::mpsc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
+
+/// Minimum quiet time between two successive bumps.
+const DEBOUNCE_MS: u64 = 500;
 
 /// Starts a blocking file-system watch loop.
 ///
@@ -43,8 +48,7 @@ use std::time::Duration;
 /// # Arguments
 ///
 /// * `config_path` - Path to the `.bumpversion.toml` configuration file.
-/// * `part` - Version component to bump on each save (`"major"`, `"minor"`,
-///   `"patch"`, or any custom part name).
+/// * `part` - Version component to bump on each save.
 ///
 /// # Errors
 ///
@@ -55,7 +59,7 @@ use std::time::Duration;
 ///
 /// - **Time**: O(∞) - blocks until interrupted.
 /// - **Space**: O(F) where F = number of watched files.
-pub fn run_watch(config_path: &str, part: &str) -> Result<(), BumpError> {
+pub fn run_watch(config_path: &str, part: &BumpPart) -> Result<(), BumpError> {
     let (tx, rx) = mpsc::channel::<Result<Event, notify::Error>>();
 
     let mut watcher = recommended_watcher(move |res| {
@@ -78,9 +82,19 @@ pub fn run_watch(config_path: &str, part: &str) -> Result<(), BumpError> {
 
     println!("[watch] Watching for changes. Press Ctrl-C to stop.");
 
-    for event in rx {
+    let mut last_bump: Option<Instant> = None;
+
+    for event in &rx {
         let event = event.map_err(|e| BumpError::Other(e.to_string()))?;
+
         if !matches!(event.kind, EventKind::Modify(_) | EventKind::Create(_)) {
+            continue;
+        }
+
+        if last_bump
+            .map(|t| t.elapsed() < Duration::from_millis(DEBOUNCE_MS))
+            .unwrap_or(false)
+        {
             continue;
         }
 
@@ -137,10 +151,13 @@ pub fn run_watch(config_path: &str, part: &str) -> Result<(), BumpError> {
             let updated_config =
                 apply_config_version_update(&config_content, &current, &new_version);
             let _ = fs::write(config_path, &updated_config);
+
+            last_bump = Some(Instant::now());
+
+            while rx.try_recv().is_ok() {}
+
             println!("[watch] Bumped {current} → {new_version}");
         }
-
-        std::thread::sleep(Duration::from_millis(200));
     }
 
     Ok(())

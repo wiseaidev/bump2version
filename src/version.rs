@@ -7,7 +7,7 @@
 
 //! # Version Parsing and Bumping
 //!
-//! Provides [`Version`] (an ordered map of version components) and
+//! Provides [`Version`] (an ordered map of version components), [`BumpPart`], and
 //! [`bump_version`], the central function that increments one component and
 //! resets downstream components according to the configured serialisation
 //! order and part definitions.
@@ -24,22 +24,22 @@
 //! ## Example
 //!
 //! ```rust
-//! use bump2version::version::{parse_version, bump_version, serialize_version};
+//! use bump2version::version::{BumpPart, parse_version, bump_version, serialize_version};
 //! use bump2version::config::BumpConfig;
 //!
 //! let cfg = BumpConfig::default();
 //! let version = parse_version("1.2.3", &cfg).unwrap();
-//! let bumped  = bump_version(&version, "patch", &cfg).unwrap();
+//! let bumped  = bump_version(&version, &BumpPart::Patch, &cfg).unwrap();
 //! assert_eq!(serialize_version(&bumped, &cfg), "1.2.4");
 //! ```
 //!
 //! ```rust
-//! use bump2version::version::{parse_version, bump_version, serialize_version};
+//! use bump2version::version::{BumpPart, parse_version, bump_version, serialize_version};
 //! use bump2version::config::BumpConfig;
 //!
 //! let cfg = BumpConfig::default();
 //! let version = parse_version("1.2.3", &cfg).unwrap();
-//! let bumped  = bump_version(&version, "minor", &cfg).unwrap();
+//! let bumped  = bump_version(&version, &BumpPart::Minor, &cfg).unwrap();
 //! assert_eq!(serialize_version(&bumped, &cfg), "1.3.0");
 //! ```
 
@@ -47,6 +47,8 @@ use crate::config::{BumpConfig, PartConfig};
 use crate::error::BumpError;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
+use core::fmt;
+use core::str::FromStr;
 use indexmap::IndexMap;
 use memchr::memchr;
 use regex::Regex;
@@ -96,6 +98,93 @@ fn cached_regex(pattern: &str) -> Result<Arc<Regex>, BumpError> {
     Regex::new(pattern)
         .map_err(|e| BumpError::InvalidRegex(pattern.to_string(), e))
         .map(Arc::new)
+}
+
+/// The version component to increment during a bump operation.
+///
+/// The three standard semver parts are represented as dedicated variants.
+/// Any user-defined cyclic part (e.g. `devnum`, `stage`) is represented by
+/// the [`BumpPart::Custom`] variant.
+///
+/// # Conversions
+///
+/// - `"major"` / `"minor"` / `"patch"` parse to their respective variants.
+/// - Any other string is wrapped in [`BumpPart::Custom`].
+/// - [`Display`](fmt::Display) returns the canonical string representation.
+///
+/// # Examples
+///
+/// ```rust
+/// use bump2version::version::BumpPart;
+///
+/// assert_eq!(BumpPart::from("major"), BumpPart::Major);
+/// assert_eq!(BumpPart::from("stage"), BumpPart::Custom("stage".to_string()));
+/// assert_eq!(BumpPart::Minor.to_string(), "minor");
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum BumpPart {
+    /// Increment the `major` component and reset all downstream parts.
+    Major,
+    /// Increment the `minor` component and reset all downstream parts.
+    Minor,
+    /// Increment the `patch` component.
+    Patch,
+    /// Increment a user-defined part by name.
+    Custom(String),
+}
+
+impl BumpPart {
+    /// Returns the canonical string name of this component.
+    ///
+    /// # Complexity
+    ///
+    /// - **Time**: O(1).
+    /// - **Space**: O(1).
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Major => "major",
+            Self::Minor => "minor",
+            Self::Patch => "patch",
+            Self::Custom(s) => s.as_str(),
+        }
+    }
+}
+
+impl fmt::Display for BumpPart {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for BumpPart {
+    fn from(s: &str) -> Self {
+        match s {
+            "major" => Self::Major,
+            "minor" => Self::Minor,
+            "patch" => Self::Patch,
+            other => Self::Custom(other.to_string()),
+        }
+    }
+}
+
+impl From<String> for BumpPart {
+    fn from(s: String) -> Self {
+        Self::from(s.as_str())
+    }
+}
+
+impl FromStr for BumpPart {
+    type Err = core::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self::from(s))
+    }
+}
+
+impl AsRef<str> for BumpPart {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
 }
 
 /// A single version component.
@@ -195,9 +284,9 @@ pub fn parse_version(version_str: &str, cfg: &BumpConfig) -> Result<Version, Bum
 ///
 /// # Arguments
 ///
-/// * `version`        - The current parsed [`Version`].
-/// * `part_to_bump`   - Name of the component to increment (e.g. `"patch"`).
-/// * `cfg`            - Active [`BumpConfig`].
+/// * `version`  - The current parsed [`Version`].
+/// * `part`     - The [`BumpPart`] identifying which component to increment.
+/// * `cfg`      - Active [`BumpConfig`].
 ///
 /// # Returns
 ///
@@ -207,7 +296,7 @@ pub fn parse_version(version_str: &str, cfg: &BumpConfig) -> Result<Version, Bum
 ///
 /// # Errors
 ///
-/// - [`BumpError::UnknownComponent`]: `part_to_bump` is not in `version`.
+/// - [`BumpError::UnknownComponent`]: `part` is not present in `version`.
 /// - [`BumpError::InvalidComponentValue`]: a numeric component has a
 ///   non-integer value.
 ///
@@ -217,9 +306,10 @@ pub fn parse_version(version_str: &str, cfg: &BumpConfig) -> Result<Version, Bum
 /// - **Space**: O(k) for the cloned version.
 pub fn bump_version(
     version: &Version,
-    part_to_bump: &str,
+    part: &BumpPart,
     cfg: &BumpConfig,
 ) -> Result<Version, BumpError> {
+    let part_to_bump = part.as_str();
     if !version.contains_key(part_to_bump) {
         return Err(BumpError::UnknownComponent(part_to_bump.to_string()));
     }

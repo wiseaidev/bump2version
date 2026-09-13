@@ -78,6 +78,18 @@ fn main() -> Result<(), BumpError> {
         .replace("{new_version}", &new_version)
         .replace("{current_version}", &current_version);
 
+    let maybe_repo: Option<gix::Repository> = if do_commit && !dry_run {
+        let current_dir = std::env::current_dir()?;
+        let repo = gix::open(current_dir.to_str().unwrap())
+            .map_err(|e| BumpError::GitError("open_repo".into(), e.to_string()))?;
+        if !cfg.allow_dirty {
+            assert_clean_working_tree(&repo)?;
+        }
+        Some(repo)
+    } else {
+        None
+    };
+
     let file_configs = collect_file_configs(&cfg, &args.files);
     let mut changed_paths: Vec<String> = Vec::with_capacity(file_configs.len() + 4);
 
@@ -120,15 +132,7 @@ fn main() -> Result<(), BumpError> {
         }
     }
 
-    if do_commit && !dry_run {
-        let current_dir = std::env::current_dir()?;
-        let repo = gix::open(current_dir.to_str().unwrap())
-            .map_err(|e| BumpError::GitError("open_repo".into(), e.to_string()))?;
-
-        if !cfg.allow_dirty {
-            assert_clean_working_tree(&repo)?;
-        }
-
+    if let Some(repo) = maybe_repo {
         let (author_name, author_email) = get_git_author(&repo)?;
         let commit_id = commit_files(&repo, &changed_paths, &message, &author_name, &author_email)?;
 

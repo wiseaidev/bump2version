@@ -26,7 +26,7 @@ The following component lets the user enter a version string and instantly see t
 
 ```rust
 use bump2version::config::BumpConfig;
-use bump2version::version::{bump_version, parse_version, serialize_version};
+use bump2version::version::{BumpPart, bump_version, parse_version, serialize_version};
 use yew::prelude::*;
 
 #[function_component(VersionBumper)]
@@ -40,7 +40,7 @@ pub fn version_bumper() -> Html {
         Callback::from(move |part: &'static str| {
             let cfg = BumpConfig::default();
             if let Ok(parsed) = parse_version(&*version, &cfg) {
-                if let Ok(bumped) = bump_version(&parsed, part, &cfg) {
+                if let Ok(bumped) = bump_version(&parsed, &BumpPart::from(part), &cfg) {
                     result.set(serialize_version(&bumped, &cfg));
                 }
             }

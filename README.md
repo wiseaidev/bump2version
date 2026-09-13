@@ -20,17 +20,17 @@
 
 ## 🚀 Installation
 
-| Platform             | Command                                             |
-| -------------------- | --------------------------------------------------- |
-| **Rust binary**      | `cargo install bump2version --features rust-binary` |
-| **Cargo subcommand** | `cargo bump --help`                                 |
-| **Docker** | `docker pull wiseaidev/bump2version` |
-| **Debian/Ubuntu** | Download `.deb` from [GitHub Releases](https://github.com/wiseaidev/bump2version/releases) |
-| **RHEL/Fedora** | Download `.rpm` from [GitHub Releases](https://github.com/wiseaidev/bump2version/releases) |
-| **Windows** | Download `bump.exe` from [GitHub Releases](https://github.com/wiseaidev/bump2version/releases) |
-| **GitHub Action** | See [action.yml](https://github.com/wiseaidev/bump2version/blob/main/action.yml) |
-| **Python** | `pip install bump-rs` |
-| **Node.js** | `npm install bump2version` |
+| Platform             | Command                                                                                        |
+| -------------------- | ---------------------------------------------------------------------------------------------- |
+| **Rust binary**      | `cargo install bump2version --features rust-binary`                                            |
+| **Cargo subcommand** | `cargo bump --help`                                                                            |
+| **Docker**           | `docker pull wiseaidev/bump2version`                                                           |
+| **Debian/Ubuntu**    | Download `.deb` from [GitHub Releases](https://github.com/wiseaidev/bump2version/releases)     |
+| **RHEL/Fedora**      | Download `.rpm` from [GitHub Releases](https://github.com/wiseaidev/bump2version/releases)     |
+| **Windows**          | Download `bump.exe` from [GitHub Releases](https://github.com/wiseaidev/bump2version/releases) |
+| **GitHub Action**    | See [action.yml](https://github.com/wiseaidev/bump2version/blob/main/action.yml)               |
+| **Python**           | `pip install bump-rs`                                                                          |
+| **Node.js**          | `npm install bump2version`                                                                     |
 
 > [!NOTE]
 > Installing via `cargo` installs both `bump` and `bump2version` binaries. The original `bump2version` binary is retained indefinitely for backward compatibility with existing tutorials, CI/CD pipelines, and automation scripts.
@@ -44,7 +44,7 @@
 - **Rewrites** version occurrences across multiple files, including multiline CHANGELOG patterns.
 - **Commits and tags** via 100% pure `gix` (gitoxide); zero subprocess calls.
 - **Detects** version strings across any language's manifest files (Rust, Python, JS, Go, Java, Ruby).
-- **Watches** for file changes and bumps automatically on save.
+- **Watches** for file changes and bumps automatically on save (one bump per save, with debounce).
 - **Bumps workspaces** atomically across all Cargo workspace members.
 
 ## 💻 Command-line Interface
@@ -104,12 +104,12 @@ bump2version = "0.2.1"
 ```
 
 ```rust
-use bump2version::{config::BumpConfig, version::{parse_version, bump_version, serialize_version}};
+use bump2version::{config::BumpConfig, version::{BumpPart, parse_version, bump_version, serialize_version}};
 
 fn main() {
     let cfg = BumpConfig::default();
     let v   = parse_version("1.2.3", &cfg).unwrap();
-    let v2  = bump_version(&v, "patch", &cfg).unwrap();
+    let v2  = bump_version(&v, &BumpPart::Patch, &cfg).unwrap();
     println!("{}", serialize_version(&v2, &cfg)); // 1.2.4
 }
 ```
@@ -172,8 +172,10 @@ commit = true
 tag = true
 
 [bumpversion:file:Cargo.toml]
-search = 'version = "{current_version}"'
-replace = 'version = "{new_version}"'
+search = name = "my-crate"
+    version = "{current_version}"
+replace = name = "my-crate"
+    version = "{new_version}"
 
 [bumpversion:file:CHANGELOG.md]
 search = """
@@ -218,9 +220,10 @@ The `workspace` module discovers all `[workspace]` members and bumps every `Carg
 The action is published as **[`bump-rs`](https://github.com/marketplace/actions/bump-rs)** on the GitHub Marketplace.
 
 ```yaml
-- uses: wiseaidev/bump-rs@main
+- name: bump-rs
+  uses: wiseaidev/bump2version@v0.2.1
   with:
-    release_type: patch   # 'major', 'minor', or 'patch' - omit to auto-detect from git tags
+    release_type: patch # 'major', 'minor', or 'patch' - omit to auto-detect from git tags
     commit: "true"
     tag: "true"
     dry-run: "false"
@@ -228,11 +231,11 @@ The action is published as **[`bump-rs`](https://github.com/marketplace/actions/
     config-file: ".bumpversion.toml"
 ```
 
-| Output          | Description                                  |
-| --------------- | -------------------------------------------- |
-| `new_version`   | The new version string after bumping         |
-| `old_version`   | The previous version string before bumping   |
-| `release_type`  | The component that was bumped (major/minor/patch) |
+| Output         | Description                                       |
+| -------------- | ------------------------------------------------- |
+| `new_version`  | The new version string after bumping              |
+| `old_version`  | The previous version string before bumping        |
+| `release_type` | The component that was bumped (major/minor/patch) |
 
 ## 🔒 Safety
 

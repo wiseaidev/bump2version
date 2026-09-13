@@ -373,8 +373,8 @@ pub fn parse_config(content: &str) -> Result<BumpConfig, BumpError> {
                     "allow_dirty" => cfg.allow_dirty = parse_bool(&value),
                     _ => {}
                 },
-                Section::File(path) => {
-                    if let Some(fc) = cfg.files.iter_mut().find(|f| f.path == *path) {
+                Section::File(_) => {
+                    if let Some(fc) = cfg.files.last_mut() {
                         match key.as_str() {
                             "search" => fc.search = Some(value),
                             "replace" => fc.replace = Some(value),
