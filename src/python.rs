@@ -49,7 +49,7 @@
 use crate::config::{self, FileConfig as RustFileConfig};
 use crate::error::BumpError;
 use crate::files::apply_file_change;
-use crate::version::{bump_version, parse_version, serialize_version};
+use crate::version::{BumpPart, bump_version, parse_version, serialize_version};
 use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
 
@@ -194,7 +194,8 @@ pub fn bump_version_py(
     let version =
         parse_version(current_version, &cfg).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
 
-    let bumped = bump_version(&version, part, &cfg).map_err(|e| match e {
+    let bump_part = BumpPart::from(part);
+    let bumped = bump_version(&version, &bump_part, &cfg).map_err(|e| match e {
         BumpError::UnknownComponent(c) => PyValueError::new_err(format!("Unknown component: {c}")),
         other => PyRuntimeError::new_err(other.to_string()),
     })?;

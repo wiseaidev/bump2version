@@ -27,6 +27,7 @@ exclude = [
     "package-lock.json",
     "pyproject.toml",
 ]
+default-run = "bump"
 
 [lib]
 name = "bump2version"

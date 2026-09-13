@@ -44,7 +44,7 @@
 
 use crate::config::{self, FileConfig as RustFileConfig};
 use crate::files::apply_file_change;
-use crate::version::{bump_version, parse_version, serialize_version};
+use crate::version::{BumpPart, bump_version, parse_version, serialize_version};
 use napi_derive::napi;
 
 /// Bumps a version string by the specified component.
@@ -77,8 +77,9 @@ pub fn bump_version_node(
     let version = parse_version(&current_version, &cfg)
         .map_err(|e| napi::Error::from_reason(e.to_string()))?;
 
-    let bumped =
-        bump_version(&version, &part, &cfg).map_err(|e| napi::Error::from_reason(e.to_string()))?;
+    let bump_part = BumpPart::from(part.as_str());
+    let bumped = bump_version(&version, &bump_part, &cfg)
+        .map_err(|e| napi::Error::from_reason(e.to_string()))?;
 
     Ok(serialize_version(&bumped, &cfg))
 }

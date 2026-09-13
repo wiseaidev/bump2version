@@ -6,7 +6,7 @@
 // except according to those terms.
 
 use bump2version::config::BumpConfig;
-use bump2version::version::{bump_version, parse_version, serialize_version};
+use bump2version::version::{BumpPart, bump_version, parse_version, serialize_version};
 
 /// The outcome of a single bump operation.
 #[derive(Debug, Clone, PartialEq)]
@@ -31,7 +31,8 @@ pub fn execute_bump(
     }
 
     let parsed = parse_version(version_str, &cfg).map_err(|e| format!("Parse error: {e}"))?;
-    let bumped = bump_version(&parsed, part, &cfg).map_err(|e| format!("Bump error: {e}"))?;
+    let bump_part = BumpPart::from(part);
+    let bumped = bump_version(&parsed, &bump_part, &cfg).map_err(|e| format!("Bump error: {e}"))?;
     let new_version = serialize_version(&bumped, &cfg);
 
     Ok(BumpResult { new_version })

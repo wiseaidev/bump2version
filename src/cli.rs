@@ -11,6 +11,7 @@
 //! All arguments map directly to `[bumpversion]` configuration keys and
 //! override the values found in the config file.
 
+use crate::version::BumpPart;
 use clap::Parser;
 use clap::builder::styling::{AnsiColor, Effects, Styles};
 
@@ -108,14 +109,15 @@ pub struct Cli {
 
     /// The version component to increment.
     ///
-    /// Must be a named capture group in the `--parse` regex.  Typical values
-    /// are `major`, `minor`, and `patch`.  Defaults to `patch`.
+    /// Accepted values: `major`, `minor`, `patch`, or any custom part name
+    /// declared in a `[bumpversion:part:NAME]` config section.
+    /// Defaults to `patch`.
     #[arg(
         long = "bump",
         value_name = "PART",
-        default_value_t = String::from("patch")
+        default_value_t = BumpPart::Patch
     )]
-    pub bump: String,
+    pub bump: BumpPart,
 
     /// Regular expression (with named capture groups) used to parse the
     /// version string into its components.
