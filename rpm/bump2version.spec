@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 
 Name:    bump2version
-Version: 0.2.1
+Version: 0.2.2
 Release: 1%{?dist}
 Summary: High-performance version bumper CLI written in Rust
 License: MIT

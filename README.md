@@ -100,7 +100,7 @@ The Rust crate is available on [crates.io](https://crates.io/crates/bump2version
 
 ```toml
 [dependencies]
-bump2version = "0.2.1"
+bump2version = "0.2.2"
 ```
 
 ```rust
@@ -119,7 +119,7 @@ fn main() {
 Core modules (`config`, `version`, `files`, `error`) compile in `no_std + alloc`:
 
 ```toml
-bump2version = { version = "0.2.1", default-features = false }
+bump2version = { version = "0.2.2", default-features = false }
 ```
 
 | Module           | `no_std+alloc` | `std` |
@@ -221,7 +221,7 @@ The action is published as **[`bump-rs`](https://github.com/marketplace/actions/
 
 ```yaml
 - name: bump-rs
-  uses: wiseaidev/bump2version@v0.2.1
+  uses: wiseaidev/bump2version@v0.2.2
   with:
     release_type: patch # 'major', 'minor', or 'patch' - omit to auto-detect from git tags
     commit: "true"

@@ -17,7 +17,7 @@ Add `bump2version` with `no_std` (no `std` feature) to your WASM project's `Carg
 
 ```toml
 [dependencies]
-bump2version = { version = "0.2.1", default-features = false }
+bump2version = { version = "0.2.2", default-features = false }
 ```
 
 ## Minimal Example (Yew)

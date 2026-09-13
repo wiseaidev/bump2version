@@ -1,6 +1,6 @@
 [bumpversion]
-current_version = 0.2.1
-commit = false
+current_version = 0.2.2
+commit = true
 tag = false
 
 [bumpversion:file:Cargo.toml]
@@ -36,7 +36,3 @@ replace = {new_version}
 [bumpversion:file:rpm/bump2version.spec]
 search = Version: {current_version}
 replace = Version: {new_version}
-
-[bumpversion:file:README.md]
-search = "uses: wiseaidev/bump2version@v{current_version}"
-replace = "uses: wiseaidev/bump2version@v{new_version}"
