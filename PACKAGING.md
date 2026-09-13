@@ -19,7 +19,7 @@ The `debian/` directory handles building `.deb` packages using standard `debhelp
    ```
 1. Install the generated package:
    ```sh
-   sudo dpkg -i ../bump2version_0.2.1-1_amd64.deb
+   sudo dpkg -i ../bump2version_0.2.2-1_amd64.deb
    ```
 1. Verify the installation:
    ```sh
@@ -44,8 +44,8 @@ The `rpm/` directory manages `.rpm` package configurations through the `bump2ver
    ```
 1. Archive the module and place it into the `SOURCES` directory:
    ```sh
-   tar -czvf ~/rpmbuild/SOURCES/bump2version-0.2.1.tar.gz \
-     --transform "s,^\.,bump2version-0.2.1," \
+   tar -czvf ~/rpmbuild/SOURCES/bump2version-0.2.2.tar.gz \
+     --transform "s,^\.,bump2version-0.2.2," \
      --exclude=.git .
    ```
 1. Build the RPM:
@@ -54,7 +54,7 @@ The `rpm/` directory manages `.rpm` package configurations through the `bump2ver
    ```
 1. Install the built RPM:
    ```sh
-   sudo dnf install ~/rpmbuild/RPMS/x86_64/bump2version-0.2.1-1.x86_64.rpm
+   sudo dnf install ~/rpmbuild/RPMS/x86_64/bump2version-0.2.2-1.x86_64.rpm
    ```
 1. Verify:
    ```sh

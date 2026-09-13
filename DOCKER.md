@@ -63,7 +63,7 @@ alias bump="docker run --rm -v \"\$(pwd):/workspace\" wiseaidev/bump2version"
 | Tag      | Description                |
 | -------- | -------------------------- |
 | `latest` | Most recent stable release |
-| `0.2.1`  | Specific patch version     |
+| `0.2.2`  | Specific patch version     |
 | `0.2`    | Latest 0.2.x patch         |
 
 ## Image Details
