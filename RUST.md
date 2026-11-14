@@ -16,7 +16,7 @@ cargo install bump2version --features rust-binary
 
 ```toml
 [dependencies]
-bump2version = { version = "0.2.2", default-features = false }
+bump2version = { version = "0.2.3", default-features = false }
 ```
 
 ## 🛠 Usage Overview
@@ -97,7 +97,7 @@ cargo bump --help
 ### 1. Patch / Minor / Major bump
 
 ```sh
-bump --bump patch          # 0.2.1 → 0.2.2
+bump --bump patch          # 0.2.1 → 0.2.3
 bump --bump minor          # 0.2.1 → 0.3.0
 bump --bump major          # 0.2.1 → 1.0.0
 ```
@@ -107,7 +107,7 @@ bump --bump major          # 0.2.1 → 1.0.0
 ```sh
 bump --bump patch --dry-run
 bump --bump minor -n
-# Output: [dry-run] Would commit 1 file(s) with message: Bump version: 0.2.1 → 0.2.2
+# Output: [dry-run] Would commit 1 file(s) with message: Bump version: 0.2.1 → 0.2.3
 ```
 
 ### 3. Explicit new version (skip bump calculation)
