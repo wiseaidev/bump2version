@@ -54,7 +54,7 @@
 cargo install bump2version --features rust-binary
 
 # Use directly
-bump --bump patch          # 0.2.1 → 0.2.2
+bump --bump patch          # 0.2.1 → 0.2.3
 bump --bump minor          # 0.2.1 → 0.3.0
 bump --bump major          # 0.2.1 → 1.0.0
 bump --bump patch --dry-run  # preview only
@@ -100,7 +100,7 @@ The Rust crate is available on [crates.io](https://crates.io/crates/bump2version
 
 ```toml
 [dependencies]
-bump2version = "0.2.2"
+bump2version = "0.2.3"
 ```
 
 ```rust
@@ -119,7 +119,7 @@ fn main() {
 Core modules (`config`, `version`, `files`, `error`) compile in `no_std + alloc`:
 
 ```toml
-bump2version = { version = "0.2.2", default-features = false }
+bump2version = { version = "0.2.3", default-features = false }
 ```
 
 | Module           | `no_std+alloc` | `std` |
@@ -221,7 +221,7 @@ The action is published as **[`bump-rs`](https://github.com/marketplace/actions/
 
 ```yaml
 - name: bump-rs
-  uses: wiseaidev/bump2version@v0.2.2
+  uses: wiseaidev/bump2version@v0.2.3
   with:
     release_type: patch # 'major', 'minor', or 'patch' - omit to auto-detect from git tags
     commit: "true"
